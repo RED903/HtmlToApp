@@ -8,7 +8,7 @@
   
   <!-- PWA Manifest & Icons -->
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="./운동앱/icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -182,39 +182,23 @@
       </div>
       
       <div class="p-5 space-y-4 text-xs sm:text-sm text-slate-300 max-h-[70vh] overflow-y-auto">
-        <p class="text-slate-400">
-          이 포털에 새로운 웹 앱을 등록하려면 아래 2단계만 진행하시면 됩니다:
+        <p class="text-slate-300">
+          이제 <strong>코드를 일일이 수정할 필요가 없습니다!</strong><br>
+          폴더만 만들고 GitHub에 올리면 자동으로 앱 카드가 생성됩니다.
         </p>
 
         <div class="space-y-3">
           <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
-            <span class="font-bold text-indigo-400 block mb-1">Step 1. 폴더 생성 및 앱 파일 넣기</span>
+            <span class="font-bold text-indigo-400 block mb-1">🎉 딱 1단계: 새 폴더 만들고 파일 넣기</span>
             <p class="text-slate-400 text-xs leading-relaxed">
-              최상위 폴더에 새 폴더를 만들고 그 안에 <code class="text-amber-300">index.html</code> 파일을 넣습니다.<br>
-              (예: <code class="text-slate-200">AndroidAppByHtml/가계부앱/index.html</code>)
+              최상위 폴더에 새 폴더(예: <code class="text-amber-300">계산기</code>, <code class="text-amber-300">메모장</code>, <code class="text-amber-300">가계부</code>)를 만들고 그 안에 <code class="text-slate-200">index.html</code>을 넣고 GitHub에 push하세요.<br><br>
+              👉 시스템이 자동으로 <strong>폴더 이름과 manifest.json을 분석하여 아이콘과 카테고리를 자동 생성</strong>해 줍니다!
             </p>
-          </div>
-
-          <div class="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
-            <span class="font-bold text-indigo-400 block mb-1">Step 2. <code class="text-indigo-300">index.html</code>의 APPS_DATA에 항목 추가</span>
-            <p class="text-slate-400 text-xs leading-relaxed mb-2">
-              최상위 <code class="text-slate-200">index.html</code> 코드 내 <code class="text-amber-300">APPS_DATA</code> 배열에 새 앱 정보를 한 줄 추가합니다:
-            </p>
-            <pre class="bg-slate-950 p-2.5 rounded-lg font-mono text-[11px] text-indigo-200 overflow-x-auto border border-slate-800">{
-  id: 'budget-app',
-  title: '가계부 계산기',
-  description: '간편한 일일 지출 및 예산 관리',
-  path: './가계부앱/index.html',
-  icon: '💰',
-  badge: '신규',
-  category: '생산성/도구',
-  tags: ['돈', '계산', '지출']
-}</pre>
           </div>
         </div>
 
         <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-3 text-xs text-indigo-200">
-          💡 <strong>Tip:</strong> GitHub 저장소에 push하면 GitHub Pages에서 추가된 앱을 즉시 실행하고 모바일 기기에서도 동일하게 이용할 수 있습니다.
+          💡 <strong>Tip:</strong> 폴더 안에 <code class="text-amber-300">manifest.json</code>을 함께 넣어두시면 설정한 앱 이름과 설명이 자동으로 완벽하게 반영됩니다.
         </div>
       </div>
 
@@ -228,9 +212,9 @@
 
   <script>
     // ==========================================
-    // 📦 등록된 웹 앱 데이터베이스 (여기에 새 앱을 추가하면 됩니다)
+    // 📦 기본 앱 데이터 (오프라인 / 로컬 Fallback)
     // ==========================================
-    const APPS_DATA = [
+    const DEFAULT_APPS = [
       {
         id: 'workout',
         title: '운동 루틴 타이머',
@@ -243,25 +227,114 @@
         borderColor: 'border-indigo-500/30 hover:border-indigo-400',
         tags: ['운동', '헬스', '타이머', '루틴', '오프라인']
       }
-      // 새 앱을 추가할 때 아래 형태를 복사해서 붙여넣으세요:
-      /*
-      , {
-        id: 'sample-app',
-        title: '새 프로그램 이름',
-        description: '프로그램에 대한 간단한 설명을 입력하세요.',
-        path: './폴더이름/index.html',
-        icon: '📱',
-        badge: '신규',
-        category: '유틸리티',
-        colorTheme: 'from-emerald-500/20 to-teal-500/10',
-        borderColor: 'border-emerald-500/30 hover:border-emerald-400',
-        tags: ['유틸', '도구']
-      }
-      */
     ];
 
+    let APPS_DATA = [...DEFAULT_APPS];
     let currentCategory = 'all';
     let searchQuery = '';
+
+    // 폴더 이름에 따라 자동으로 예쁜 아이콘과 카테고리를 추론하는 헬퍼
+    function guessAppMeta(folderName) {
+      const name = folderName.toLowerCase();
+      if (name.includes('운동') || name.includes('헬스') || name.includes('피트니스') || name.includes('timer') || name.includes('타이머')) {
+        return { icon: '🏋️‍♂️', category: '운동/건강', tags: ['운동', '루틴', '타이머'] };
+      }
+      if (name.includes('계산기') || name.includes('calc') || name.includes('수학') || name.includes('가계부') || name.includes('돈')) {
+        return { icon: '🔢', category: '생산성/도구', tags: ['계산기', '도구'] };
+      }
+      if (name.includes('메모') || name.includes('memo') || name.includes('todo') || name.includes('할일') || name.includes('노트')) {
+        return { icon: '📝', category: '생산성/도구', tags: ['메모', '할일', '생산성'] };
+      }
+      if (name.includes('날씨') || name.includes('weather')) {
+        return { icon: '☀️', category: '유틸리티', tags: ['날씨', '정보'] };
+      }
+      if (name.includes('음악') || name.includes('music') || name.includes('오디오')) {
+        return { icon: '🎵', category: '유틸리티', tags: ['음악', '미디어'] };
+      }
+      if (name.includes('게임') || name.includes('game')) {
+        return { icon: '🎮', category: '기타', tags: ['게임', '엔터'] };
+      }
+      return { icon: '📱', category: '유틸리티', tags: ['웹앱', '프로그램'] };
+    }
+
+    // 🚀 [핵심] GitHub 저장소 및 하위 디렉토리 자동 스캔 함수
+    async function autoDiscoverApps() {
+      try {
+        let discoveredDirs = [];
+
+        // 1. GitHub Pages 환경 감지
+        const host = window.location.hostname;
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+
+        if (host.endsWith('github.io') && pathParts.length > 0) {
+          const owner = host.split('.')[0];
+          const repo = pathParts[0];
+          const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents`;
+
+          const res = await fetch(apiUrl);
+          if (res.ok) {
+            const contents = await res.json();
+            discoveredDirs = contents
+              .filter(item => item.type === 'dir' && !item.name.startsWith('.'))
+              .map(item => item.name);
+          }
+        }
+
+        // 2. apps.json 정적 파일이 있다면 추가 동기화
+        try {
+          const appsJsonRes = await fetch('./apps.json');
+          if (appsJsonRes.ok) {
+            const list = await appsJsonRes.json();
+            if (Array.isArray(list)) {
+              APPS_DATA = list;
+              renderApps();
+              return;
+            }
+          }
+        } catch (e) {}
+
+        // 3. 발견된 폴더들에서 manifest.json 또는 메타데이터 자동 파싱
+        if (discoveredDirs.length > 0) {
+          const newApps = [];
+          for (const dirName of discoveredDirs) {
+            const defaultMeta = guessAppMeta(dirName);
+            let appObj = {
+              id: dirName,
+              title: dirName,
+              description: `${dirName} 웹 애플리케이션`,
+              path: `./${dirName}/index.html`,
+              icon: defaultMeta.icon,
+              badge: '자동 감지됨',
+              category: defaultMeta.category,
+              colorTheme: 'from-cyan-500/20 to-blue-500/10',
+              borderColor: 'border-cyan-500/30 hover:border-cyan-400',
+              tags: defaultMeta.tags
+            };
+
+            // 하위 폴더의 manifest.json을 열어 앱 이름과 설명 자동 추출
+            try {
+              const manifestRes = await fetch(`./${dirName}/manifest.json`);
+              if (manifestRes.ok) {
+                const manifest = await manifestRes.json();
+                if (manifest.name) appObj.title = manifest.name;
+                if (manifest.description) appObj.description = manifest.description;
+                if (manifest.short_name && !manifest.name) appObj.title = manifest.short_name;
+              }
+            } catch (err) {}
+
+            newApps.push(appObj);
+          }
+
+          if (newApps.length > 0) {
+            APPS_DATA = newApps;
+          }
+        }
+      } catch (err) {
+        console.log('[Auto-Discovery] 자동 스캔 건너뜀 (기본 목록 사용):', err);
+      } finally {
+        renderApps();
+      }
+    }
 
     // 화면에 앱 목록 렌더링
     function renderApps() {
@@ -377,22 +450,38 @@
       modal.classList.remove('flex');
     }
 
-    // PWA 설치 프로프트 제어
+    // PWA 설치 상태 및 독립 실행 모드(Standalone) 감지
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const installBtn = document.getElementById('btn-install');
+
+    // 이미 설치되어 단독 앱으로 실행된 경우 설치 버튼 영구 숨김
+    if (isStandalone && installBtn) {
+      installBtn.style.display = 'none';
+    }
+
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      const installBtn = document.getElementById('btn-install');
-      if (installBtn) {
+      
+      // 이미 앱 모드가 아닐 때만 설치 버튼 표시
+      if (!isStandalone && installBtn) {
         installBtn.classList.remove('hidden');
-        installBtn.addEventListener('click', () => {
+        installBtn.onclick = () => {
           deferredPrompt.prompt();
-          deferredPrompt.userChoice.then(() => {
+          deferredPrompt.userChoice.then((choice) => {
+            if (choice.outcome === 'accepted') {
+              installBtn.classList.add('hidden');
+            }
             deferredPrompt = null;
-            installBtn.classList.add('hidden');
           });
-        });
+        };
       }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      if (installBtn) installBtn.classList.add('hidden');
+      console.log('PWA 설치 완료');
     });
 
     // 루트 서비스 워커 등록
@@ -406,8 +495,8 @@
       });
     }
 
-    // 초기 렌더링
-    renderApps();
+    // 초기 자동 스캔 및 렌더링 실행
+    autoDiscoverApps();
   </script>
 </body>
 </html>
