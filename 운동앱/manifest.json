@@ -1,8 +1,10 @@
 {
+  "id": "workout-timer-app",
   "name": "운동 타이머",
-  "short_name": "타이머",
+  "short_name": "운동타이머",
   "description": "운동 루틴과 휴식 시간을 관리하는 웹 앱",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",

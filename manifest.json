@@ -1,8 +1,10 @@
 {
+  "id": "personal-app-hub",
   "name": "Personal Web App Hub",
   "short_name": "앱 허브",
   "description": "다양한 웹 앱을 한곳에서 실행하는 모바일 포털",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#090d16",
   "theme_color": "#090d16",

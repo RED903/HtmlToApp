@@ -1,9 +1,8 @@
-// 오프라인 캐싱을 위한 서비스 워커 (Service Worker)
-const CACHE_NAME = 'workout-timer-v2';
+// 오프라인 완벽 구동을 위한 서비스 워커 (Service Worker v3)
+const CACHE_NAME = 'workout-timer-v3';
 
-// 오프라인 상태에서도 앱이 동작하도록 미리 저장(Pre-cache)할 파일 및 CDN 자원 목록
-const PRECACHE_URLS = [
-  './',
+// 오프라인 실행을 위해 반드시 스마트폰에 보관해야 하는 필수 리소스
+const PRECACHE_ASSETS = [
   './index.html',
   './manifest.json',
   './icon-192.png',
@@ -14,51 +13,89 @@ const PRECACHE_URLS = [
   'https://unpkg.com/@babel/standalone/babel.min.js'
 ];
 
-// 서비스 워커 설치 (Install 이벤트): 필수 자원 미리 다운로드 및 저장
+// 1. 서비스 워커 설치 단계 (Install)
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] 설치 중...');
-  self.skipWaiting(); // 이전 서비스 워커를 기다리지 않고 즉시 활성화
+  console.log('[SW v3] 설치 시작 및 리소스 캐싱 중...');
+  self.skipWaiting(); // 이전 서비스 워커 즉시 교체
 
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] 오프라인 자원 캐싱 완료');
-      return cache.addAll(PRECACHE_URLS).catch((err) => {
-        console.error('[Service Worker] 자원 캐싱 중 오류 발생:', err);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // 개별 리소스를 안전하게 캐싱 (하나가 실패해도 전체가 중단되지 않음)
+      const cachePromises = PRECACHE_ASSETS.map(async (url) => {
+        try {
+          const response = await fetch(url, { cache: 'no-cache' });
+          if (response.ok || response.type === 'opaque') {
+            await cache.put(url, response);
+            console.log('[SW v3] 캐시 성공:', url);
+          }
+        } catch (err) {
+          console.warn('[SW v3] 단일 캐시 실패 (무시하고 계속 진행):', url, err);
+        }
       });
+      await Promise.allSettled(cachePromises);
+      console.log('[SW v3] 필수 리소스 캐싱 완료');
     })
   );
 });
 
-// 서비스 워커 활성화 (Activate 이벤트): 구버전 캐시 삭제 및 클라이언트 제어
+// 2. 서비스 워커 활성화 단계 (Activate)
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] 활성화 중...');
+  console.log('[SW v3] 서비스 워커 활성화됨');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then((keys) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[Service Worker] 구버전 캐시 삭제:', cacheName);
-            return caches.delete(cacheName);
+        keys.map((key) => {
+          if (key !== CACHE_NAME && key.startsWith('workout-timer')) {
+            console.log('[SW v3] 구버전 캐시 삭제:', key);
+            return caches.delete(key);
           }
         })
       );
-    }).then(() => self.clients.claim()) // 현재 모든 페이지에서 즉시 서비스 워커 제어 적용
+    }).then(() => self.clients.claim()) // 모든 페이지 즉시 제어권 획득
   );
 });
 
-// 네트워크 요청 가로채기 (Fetch 이벤트): Cache First 전략 적용
+// 3. 네트워크 요청 처리 단계 (Fetch)
 self.addEventListener('fetch', (event) => {
-  // GET 요청만 캐싱 처리
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+
+  // A. 앱 실행 및 화면 진입(Navigate) 요청 처리 (홈화면 아이콘 클릭 시)
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      caches.match('./index.html', { ignoreSearch: true }).then((cachedIndex) => {
+        if (cachedIndex) {
+          // 캐시된 index.html이 있으면 즉시 반환 (오프라인 100% 실행)
+          // 백그라운드로 최신 index.html 가져와서 캐시 갱신
+          fetch(event.request).then((networkRes) => {
+            if (networkRes && networkRes.ok) {
+              caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', networkRes));
+            }
+          }).catch(() => {});
+          return cachedIndex;
+        }
+        // 캐시에 없으면 네트워크 시도 후 캐시 저장
+        return fetch(event.request).then((networkRes) => {
+          if (networkRes && networkRes.ok) {
+            const copy = networkRes.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
+          }
+          return networkRes;
+        });
+      })
+    );
+    return;
+  }
+
+  // B. 스크립트, CDN, 아이콘, 기타 자원 요청 처리 (Cache First)
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // 1. 캐시에 자원이 있으면 캐시에서 즉시 반환 (오프라인 작동 핵심)
+    caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
 
-      // 2. 캐시에 없으면 네트워크 요청 후 캐시에 동적 추가 (Dynamic Cache)
+      // 캐시에 없는 경우 네트워크 요청 후 동적 캐싱
       return fetch(event.request).then((networkResponse) => {
         if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
           const responseToCache = networkResponse.clone();
@@ -67,13 +104,9 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        // 3. 네트워크 연결 끊김(오프라인) 상태이고 페이지 이동 요청(navigate)인 경우 캐시된 index.html 반환
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
+      }).catch((err) => {
+        console.warn('[SW v3] 리소스 로드 실패:', event.request.url, err);
       });
     })
   );
 });
-
