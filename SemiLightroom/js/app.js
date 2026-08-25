@@ -910,23 +910,49 @@ class SemiLightroomApp {
       if (icon) icon.textContent = isCollapsed ? '▲' : '▼';
     });
 
-    // 1. 설정 복사
-    document.getElementById('btn-copy-settings')?.addEventListener('click', () => {
-      this.copiedParams = JSON.parse(JSON.stringify(this.engine.params));
-      alert('📋 현재 사진의 모든 편집 설정(톤, 색상, 커브 등)이 복사되었습니다.');
+    // 1. 설정 파일로 내보내기 (.slpreset / .json 파일 다운로드)
+    document.getElementById('btn-export-recipe')?.addEventListener('click', () => {
+      const currentName = this.currentImageInfo ? this.currentImageInfo.name.replace(/\.[^/.]+$/, "") : "photo";
+      const recipeData = {
+        app: "SemiLightroom",
+        version: "2.0",
+        created: new Date().toISOString(),
+        name: `${currentName}_recipe`,
+        params: JSON.parse(JSON.stringify(this.engine.params))
+      };
+
+      const jsonStr = JSON.stringify(recipeData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.download = `${currentName}_recipe.slpreset`;
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
     });
 
-    // 2. 붙여넣기
-    document.getElementById('btn-paste-settings')?.addEventListener('click', () => {
-      if (!this.copiedParams) {
-        alert('먼저 복사할 설정이 없습니다. [설정 복사]를 눌러주세요.');
-        return;
-      }
-      this.engine.params = JSON.parse(JSON.stringify(this.copiedParams));
-      this.syncUIWithParams();
-      this.pushHistoryState();
-      this.engine.render();
-      alert('📥 현재 사진에 복사된 설정이 적용되었습니다.');
+    // 2. 설정 파일 불러와서 적용
+    document.getElementById('btn-import-recipe')?.addEventListener('click', () => {
+      document.getElementById('recipe-file-input').click();
+    });
+
+    document.getElementById('recipe-file-input')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          const recipeParams = imported.params || imported;
+          this.applyPreset(recipeParams);
+          alert(`📥 설정 파일 '${file.name}'을 성공적으로 불러와 적용했습니다!`);
+        } catch {
+          alert('올바른 설정 파일(.slpreset / .json) 형식이 아닙니다.');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = ''; // 재선택 가능하게 초기화
     });
 
     // 3. 전체 사진에 일괄 적용 (Batch Sync All)

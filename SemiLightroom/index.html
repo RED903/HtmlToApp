@@ -136,12 +136,13 @@
             <span>🎞️ 큐 (<span id="filmstrip-count">0</span>장)</span>
           </div>
           <div class="filmstrip-actions">
-            <button class="btn-filmstrip" id="btn-copy-settings" title="현재 사진의 모든 편집 설정 복사">
-              <span>📋 설정 복사</span>
+            <button class="btn-filmstrip" id="btn-export-recipe" title="현재 사진의 편집 설정을 파일(.slpreset / .json)로 저장하여 다운로드">
+              <span>📤 설정 파일로 내보내기</span>
             </button>
-            <button class="btn-filmstrip" id="btn-paste-settings" title="복사한 설정을 현재 사진에 붙여넣기">
-              <span>📥 붙여넣기</span>
+            <button class="btn-filmstrip" id="btn-import-recipe" title="저장된 설정 파일(.slpreset / .json)을 불러와 현재 사진에 적용">
+              <span>📥 설정 파일 불러오기</span>
             </button>
+            <input type="file" id="recipe-file-input" accept=".json,.slpreset" style="display:none">
             <button class="btn-filmstrip primary" id="btn-sync-all" title="현재 편집 설정을 로드된 모든 사진에 일괄 적용">
               <span>⚡ 전체 사진에 일괄 적용 (Sync All)</span>
             </button>

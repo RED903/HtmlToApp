@@ -320,14 +320,17 @@ class WebGLEngine {
         vec2 uv = clamp(suv, 0.0, 1.0);
         vec4 rawColor = texture2D(u_image, uv);
 
-        // Before / After Split
-        if (u_splitEnabled == 1 && v_texCoord.x < u_splitPos) {
-          if (abs(v_texCoord.x - u_splitPos) < 0.002) {
-            gl_FragColor = vec4(1.0, 0.8, 0.2, 1.0);
+        // Before / After Split (분할 비교선 선명하게 렌더링)
+        if (u_splitEnabled == 1) {
+          float splitDist = abs(v_texCoord.x - u_splitPos);
+          if (splitDist < 0.0025) {
+            gl_FragColor = vec4(0.95, 0.75, 0.2, 1.0); // 선명한 황금빛 분할선
             return;
           }
-          gl_FragColor = vec4(rawColor.rgb, 1.0);
-          return;
+          if (v_texCoord.x < u_splitPos) {
+            gl_FragColor = vec4(rawColor.rgb, 1.0); // Before (원본)
+            return;
+          }
         }
 
         // ── 광색역 Linear ACEScg 32-bit Float 공간으로 진입 ──
