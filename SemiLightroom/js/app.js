@@ -254,6 +254,23 @@ class SemiLightroomApp {
       });
     });
 
+    // 스코프 모니터 열기/닫기 토글
+    const scopeToggle = document.getElementById('scope-toggle-bar');
+    const scopeWrapper = document.getElementById('scope-wrapper');
+    const scopeIcon = document.getElementById('scope-toggle-icon');
+
+    scopeToggle?.addEventListener('click', () => {
+      scopeWrapper.classList.toggle('expanded');
+      const isExpanded = scopeWrapper.classList.contains('expanded');
+      if (scopeIcon) scopeIcon.textContent = isExpanded ? '▼' : '▲';
+      if (isExpanded) {
+        setTimeout(() => {
+          this.scope.resize();
+          this.scope.update();
+        }, 50);
+      }
+    });
+
     document.querySelectorAll('.scope-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.scope-tab-btn').forEach(b => b.classList.remove('active'));

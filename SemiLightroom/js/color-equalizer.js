@@ -104,6 +104,62 @@ class ColorEqualizerUI {
       this.render();
     });
 
+    // ── 모바일 터치 이벤트 지원 ──
+    const handleTouchStart = (e) => {
+      if (e.touches.length > 0) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const rawX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+        const rawY = 1.0 - ((touch.clientY - rect.top) / rect.height);
+        const pos = { x: rawX, y: (rawY - 0.5) * 2.0 };
+
+        let closest = 0;
+        let minDist = 999;
+        for (let i = 0; i < 8; i++) {
+          const d = Math.abs(pos.x - this.centers[i]);
+          if (d < minDist) {
+            minDist = d;
+            closest = i;
+          }
+        }
+
+        this.activeNodeIndex = closest;
+        this.isDragging = true;
+        this.nodes[this.channel][closest] = Math.max(-1.0, Math.min(1.0, pos.y));
+
+        if (this.engine && this.engine.params.colorEqualizer) {
+          this.engine.params.colorEqualizer.enabled = true;
+          document.querySelector('.module-power-btn[data-module="colorEqualizer"]')?.classList.add('active');
+        }
+
+        this.syncToEngine();
+        this.render();
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (!this.isDragging || this.activeNodeIndex === -1 || e.touches.length === 0) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const rawY = 1.0 - ((touch.clientY - rect.top) / rect.height);
+      const pos = { y: (rawY - 0.5) * 2.0 };
+
+      this.nodes[this.channel][this.activeNodeIndex] = Math.max(-1.0, Math.min(1.0, pos.y));
+      this.syncToEngine();
+      this.render();
+    };
+
+    const handleTouchEnd = () => {
+      this.isDragging = false;
+      this.activeNodeIndex = -1;
+    };
+
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+
     window.addEventListener('mouseup', () => {
       this.isDragging = false;
       this.activeNodeIndex = -1;

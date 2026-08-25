@@ -956,6 +956,26 @@ input[type="range"]::-webkit-slider-thumb:hover {
   margin-top: 2px;
 }
 
+/* 스코프 토글 바 */
+#scope-toggle-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: #181818;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+#scope-toggle-bar:hover {
+  background: #252525;
+  color: #fff;
+}
+
 /* ========================================================
    모바일 전용 반응형 UI (Mobile Touch Layout)
    - 기존 PC 구조를 100% 보존하면서 스마트폰에서 완벽하게 작동
@@ -981,9 +1001,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   .btn-studio {
-    padding: 4px 8px;
-    font-size: 11px;
-    height: 30px;
+    padding: 6px 10px;
+    font-size: 12px;
+    height: 34px;
   }
 
   /* 2. 메인 워크스페이스: 세로 2단 분할 (상단 캔버스 + 하단 편집 패널) */
@@ -994,8 +1014,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   #viewport-container {
-    height: 42vh;
-    min-height: 220px;
+    height: 40vh;
+    min-height: 200px;
     width: 100%;
     touch-action: none;
     border-bottom: 1px solid var(--border-color);
@@ -1006,38 +1026,62 @@ input[type="range"]::-webkit-slider-thumb:hover {
     width: 100%;
     max-width: 100%;
     min-width: 100%;
-    height: calc(58vh - 48px);
+    height: calc(60vh - 48px);
     flex: 1;
     border-left: none;
   }
 
+  /* 모바일에서 스코프 모니터는 기본 닫힌 상태 */
   #scope-wrapper {
-    height: 100px;
+    display: none;
+    height: 120px;
+  }
+
+  #scope-wrapper.expanded {
+    display: block;
   }
 
   .module-top-tabs {
-    height: 42px;
+    height: 44px;
     overflow-x: auto;
     padding: 0 8px;
   }
 
   .tab-icon-btn {
-    min-width: 40px;
-    height: 36px;
+    min-width: 44px;
+    height: 38px;
   }
 
-  /* 4. 모바일 터치 슬라이더 최적화 */
+  /* 4. 모바일 터치 슬라이더 & 그래프 조작 버튼 대폭 확대 */
   .control-row {
-    padding: 4px 0;
+    padding: 6px 0;
   }
 
   input[type="range"] {
-    height: 8px;
+    height: 10px;
   }
 
   input[type="range"]::-webkit-slider-thumb {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
+  }
+
+  /* 톤 커브 및 컬러 이퀄라이저 조작 버튼 터치 최적화 */
+  .tc-channel-btn {
+    height: 38px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .ceq-subtab {
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .btn-crop-aspect {
+    padding: 8px 12px;
+    font-size: 12px;
   }
 
   /* 5. 모바일 하단 필름스트립 플로팅 */
@@ -1051,20 +1095,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   .filmstrip-header {
-    padding: 2px 8px;
+    padding: 3px 8px;
   }
 
   .btn-filmstrip {
-    padding: 2px 6px;
-    font-size: 10px;
+    padding: 4px 8px;
+    font-size: 11px;
+    height: 28px;
   }
 
   /* 6. 모달 팝업 모바일 크기 맞춤 */
   .modal-window {
-    width: 92%;
+    width: 94%;
     max-height: 85vh;
     overflow-y: auto;
   }
 }
+
 
 

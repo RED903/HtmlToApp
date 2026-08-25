@@ -221,19 +221,22 @@ class CropHorizonController {
           const dy = p2.y - p1.y;
 
           // 두 점을 이은 선분이 수평선(0도)이 되도록 회전각 계산
-          let angleDeg = -(Math.atan2(dy, dx) * 180 / Math.PI);
-          if (angleDeg > 90) angleDeg -= 180;
-          if (angleDeg < -90) angleDeg += 180;
+          let deltaAngle = -(Math.atan2(dy, dx) * 180 / Math.PI);
+          if (deltaAngle > 90) deltaAngle -= 180;
+          if (deltaAngle < -90) deltaAngle += 180;
 
-          angleDeg = parseFloat(angleDeg.toFixed(1));
-          
+          // 기존 회전각에 누적하여 연속 수평 맞춤 시에도 오차 없이 정확하게 보정
+          let currentAngle = (this.engine.params.geometry && this.engine.params.geometry.angle) ? this.engine.params.geometry.angle : 0.0;
+          let finalAngle = currentAngle + deltaAngle;
+          finalAngle = Math.max(-45.0, Math.min(45.0, parseFloat(finalAngle.toFixed(1))));
+
           if (!this.engine.params.geometry) {
             this.engine.params.geometry = { enabled: true, angle: 0.0 };
           }
-          this.engine.params.geometry.angle = angleDeg;
+          this.engine.params.geometry.angle = finalAngle;
 
           if (this.onAngleChange) {
-            this.onAngleChange(angleDeg);
+            this.onAngleChange(finalAngle);
           }
 
           this.engine.render();
@@ -248,107 +251,98 @@ class CropHorizonController {
 
       // 2. 크롭 조작 모드
       if (this.cropActive) {
-        const hit = this.hitTestCrop(pos.x, pos.y);
-        if (hit) {
-          this.dragTarget = hit;
+        const target = this.hitTestCrop(pos.x, pos.y);
+        if (target) {
+          this.dragTarget = target;
           this.dragStartPos = pos;
           this.initialRect = { ...this.cropRect };
         }
       }
     });
 
-    window.addEventListener('mousemove', (e) => {
+    // ── 모바일 터치 이벤트 완벽 지원 ──
+    const handleTouchStart = (e) => {
+      if (!this.horizonActive && !this.cropActive) return;
+      if (e.touches.length > 0) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = this.overlayCanvas.getBoundingClientRect();
+        const pos = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+
+        if (this.horizonActive) {
+          this.horizonPoints.push(pos);
+          if (this.horizonPoints.length === 2) {
+            const p1 = this.horizonPoints[0];
+            const p2 = this.horizonPoints[1];
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+
+            let deltaAngle = -(Math.atan2(dy, dx) * 180 / Math.PI);
+            if (deltaAngle > 90) deltaAngle -= 180;
+            if (deltaAngle < -90) deltaAngle += 180;
+
+            let currentAngle = (this.engine.params.geometry && this.engine.params.geometry.angle) ? this.engine.params.geometry.angle : 0.0;
+            let finalAngle = Math.max(-45.0, Math.min(45.0, parseFloat((currentAngle + deltaAngle).toFixed(1))));
+
+            if (!this.engine.params.geometry) this.engine.params.geometry = { enabled: true, angle: 0.0 };
+            this.engine.params.geometry.angle = finalAngle;
+            if (this.onAngleChange) this.onAngleChange(finalAngle);
+
+            this.engine.render();
+            this.draw();
+            setTimeout(() => this.setHorizonMode(false), 300);
+          } else {
+            this.draw();
+          }
+          return;
+        }
+
+        if (this.cropActive) {
+          const target = this.hitTestCrop(pos.x, pos.y);
+          if (target) {
+            this.dragTarget = target;
+            this.dragStartPos = pos;
+            this.initialRect = { ...this.cropRect };
+          }
+        }
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (!this.horizonActive && !this.cropActive) return;
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = this.overlayCanvas.getBoundingClientRect();
+        const pos = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+
+        if (this.horizonActive && this.horizonPoints.length === 1) {
+          this.currentMousePos = pos;
+          this.draw();
+        }
+
+        if (this.cropActive && this.dragTarget) {
+          e.preventDefault();
+          this.onCropDrag(pos);
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      this.dragTarget = null;
+    };
+
+    this.overlayCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    this.overlayCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    this.overlayCanvas.addEventListener('touchend', handleTouchEnd);
+
+    this.overlayCanvas.addEventListener('mousemove', (e) => {
       const pos = this.getCanvasPos(e);
 
-      // 수평선 점 1 찍힌 후 마우스 커서와 실시간 점선 연결
       if (this.horizonActive && this.horizonPoints.length === 1) {
         this.currentMousePos = pos;
         this.draw();
         return;
       }
-
-      if (!this.cropActive || !this.dragTarget) return;
-
-      const bounds = this.getImageBoundsOnScreen();
-
-      const dx = (pos.x - this.dragStartPos.x) / Math.max(1, bounds.w);
-      const dy = (pos.y - this.dragStartPos.y) / Math.max(1, bounds.h);
-      const init = this.initialRect;
-      let r = { ...init };
-
-      const normRatio = this.aspectRatio ? this.aspectRatio * (bounds.h / bounds.w) : null;
-
-      if (this.dragTarget === 'move') {
-        r.x = Math.max(0.0, Math.min(1.0 - r.w, init.x + dx));
-        r.y = Math.max(0.0, Math.min(1.0 - r.h, init.y + dy));
-
-      } else if (this.dragTarget === 'br') {
-        const anchorX = init.x;
-        const anchorY = init.y;
-        let newW = Math.max(0.05, Math.min(1.0 - anchorX, init.w + dx));
-        let newH = normRatio ? newW / normRatio : Math.max(0.05, Math.min(1.0 - anchorY, init.h + dy));
-
-        if (normRatio && anchorY + newH > 1.0) {
-          newH = 1.0 - anchorY;
-          newW = newH * normRatio;
-        }
-
-        r.x = anchorX;
-        r.y = anchorY;
-        r.w = Math.max(0.05, Math.min(1.0 - anchorX, newW));
-        r.h = Math.max(0.05, Math.min(1.0 - anchorY, newH));
-
-      } else if (this.dragTarget === 'tl') {
-        const anchorX = init.x + init.w;
-        const anchorY = init.y + init.h;
-        let newW = Math.max(0.05, Math.min(anchorX, init.w - dx));
-        let newH = normRatio ? newW / normRatio : Math.max(0.05, Math.min(anchorY, init.h - dy));
-
-        if (normRatio && anchorY - newH < 0.0) {
-          newH = anchorY;
-          newW = newH * normRatio;
-        }
-
-        r.x = Math.max(0.0, anchorX - newW);
-        r.y = Math.max(0.0, anchorY - newH);
-        r.w = anchorX - r.x;
-        r.h = anchorY - r.y;
-
-      } else if (this.dragTarget === 'tr') {
-        const anchorX = init.x;
-        const anchorY = init.y + init.h;
-        let newW = Math.max(0.05, Math.min(1.0 - anchorX, init.w + dx));
-        let newH = normRatio ? newW / normRatio : Math.max(0.05, Math.min(anchorY, init.h - dy));
-
-        if (normRatio && anchorY - newH < 0.0) {
-          newH = anchorY;
-          newW = newH * normRatio;
-        }
-
-        r.x = anchorX;
-        r.y = Math.max(0.0, anchorY - newH);
-        r.w = Math.max(0.05, Math.min(1.0 - anchorX, newW));
-        r.h = anchorY - r.y;
-
-      } else if (this.dragTarget === 'bl') {
-        const anchorX = init.x + init.w;
-        const anchorY = init.y;
-        let newW = Math.max(0.05, Math.min(anchorX, init.w - dx));
-        let newH = normRatio ? newW / normRatio : Math.max(0.05, Math.min(1.0 - anchorY, init.h + dy));
-
-        if (normRatio && anchorY + newH > 1.0) {
-          newH = 1.0 - anchorY;
-          newW = newH * normRatio;
-        }
-
-        r.x = Math.max(0.0, anchorX - newW);
-        r.y = anchorY;
-        r.w = anchorX - r.x;
-        r.h = Math.max(0.05, Math.min(1.0 - anchorY, newH));
-      }
-
-      this.cropRect = r;
-      this.draw();
     });
 
     window.addEventListener('mouseup', () => {

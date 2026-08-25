@@ -162,7 +162,11 @@
     <!-- 우측 다크테이블 스타일 모듈 사이드바 -->
     <aside id="right-sidebar">
 
-      <!-- 상단 실시간 스코프 모니터 -->
+      <!-- 상단 실시간 스코프 모니터 (접기/펼치기 지원) -->
+      <div id="scope-toggle-bar">
+        <span id="scope-toggle-icon">▲</span>
+        <span id="scope-toggle-title">📊 스코프 모니터</span>
+      </div>
       <div id="scope-wrapper">
         <canvas id="scope-canvas"></canvas>
         <div class="scope-mode-tabs">
