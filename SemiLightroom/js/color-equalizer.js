@@ -112,18 +112,20 @@ class ColorEqualizerUI {
     window.addEventListener('mousemove', (e) => handleMove(this.getNormPos(e)));
     window.addEventListener('mouseup', handleUp);
 
-    // 모바일 터치 이벤트
+    // 모바일 터치 이벤트 (passive: false 및 e.preventDefault()로 브라우저 스크롤 블로킹 방지)
     canvas.addEventListener('touchstart', (e) => {
       if (e.touches.length > 0) {
+        e.preventDefault();
         handleDown(this.getTouchNormPos(e.touches[0]));
       }
-    }, { passive: true });
+    }, { passive: false });
 
     window.addEventListener('touchmove', (e) => {
       if (this.isDragging && e.touches.length > 0) {
+        e.preventDefault();
         handleMove(this.getTouchNormPos(e.touches[0]));
       }
-    }, { passive: true });
+    }, { passive: false });
 
     window.addEventListener('touchend', handleUp);
 
