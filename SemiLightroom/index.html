@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SemiLightroom - RAW & Pro Photo Studio</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="app-container">
+
+  <!-- 1. 상단 글로벌 헤더 -->
+  <header id="top-header">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dca353" stroke-width="2">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+        <polyline points="2 17 12 22 22 17"></polyline>
+        <polyline points="2 12 12 17 22 12"></polyline>
+      </svg>
+      <span>SemiLightroom</span>
+      <span class="brand-badge">PRO RAW</span>
+    </div>
+
+    <!-- 중앙 뷰포트 모드 도구 (4. 뒤로가기 / 앞으로가기 포함) -->
+    <div class="header-center-tools">
+      <button class="btn-studio" id="btn-open">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span class="i18n-text" data-ko="사진 열기" data-en="Open">사진 열기</span>
+      </button>
+      <input type="file" id="file-input" multiple accept=".cr2,.cr3,.nef,.arw,.raf,.dng,.tif,.tiff,.jpg,.jpeg,.png,.webp,.avif" style="display:none">
+
+      <button class="btn-studio" id="btn-sample">
+        <span class="i18n-text" data-ko="✨ 4K 샘플 RAW" data-en="✨ 4K Sample RAW">✨ 4K 샘플 RAW</span>
+      </button>
+
+      <!-- 프리셋 관리 모달 열기 -->
+      <button class="btn-studio" id="btn-presets" title="프리셋 저장 및 불러오기">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+          <polyline points="17 21 17 13 7 13 7 21"></polyline>
+          <polyline points="7 3 7 8 15 8"></polyline>
+        </svg>
+        <span class="i18n-text" data-ko="💾 프리셋 (Presets)" data-en="💾 Presets">💾 프리셋 (Presets)</span>
+      </button>
+
+      <!-- 3. 카메라 실제 내장 JPEG 룩 적용 -->
+      <button class="btn-studio" id="btn-camera-look" title="카메라 자체 프로세싱 JPEG 색감/노출 룩 적용">
+        <span>📷 카메라 원본 JPEG 룩</span>
+      </button>
+
+      <!-- 4. 뒤로가기 / 앞으로가기 -->
+      <button class="btn-studio" id="btn-undo" title="실행 취소 (Ctrl+Z)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+        <span>Undo</span>
+      </button>
+      <button class="btn-studio" id="btn-redo" title="다시 실행 (Ctrl+Y)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span>Redo</span>
+      </button>
+
+      <button class="btn-studio" id="btn-split">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="12" y1="3" x2="12" y2="21"></line>
+        </svg>
+        <span class="i18n-text" data-ko="Before/After (B)" data-en="Before/After (B)">Before/After (B)</span>
+      </button>
+    </div>
+
+    <!-- 우측 액션 & 언어 전환 -->
+    <div class="header-right-tools">
+      <button class="lang-toggle" id="btn-lang-toggle" title="언어 전환 / Switch Language">🇰🇷 KO</button>
+      <button class="btn-studio primary" id="btn-export">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span class="i18n-text" data-ko="내보내기 (Ctrl+S)" data-en="Export (Ctrl+S)">내보내기 (Ctrl+S)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 메인 워크스페이스 -->
+  <main id="main-workspace">
+
+    <!-- 뷰포트 (중앙 WebGL 캔버스) -->
+    <div id="viewport-container">
+      <canvas id="gl-canvas"></canvas>
+
+      <div class="viewport-overlay-toolbar">
+        <span class="viewport-info-tag" id="tag-zoom" style="position:static;">100%</span>
+      </div>
+
+      <div class="viewport-info-tag" id="tag-info">
+        <span id="tag-format">NO FILE</span> | <span id="tag-filename">이미지를 드래그하거나 열어주세요</span>
+      </div>
+
+      <!-- 드롭존 안내 오버레이 -->
+      <div id="drop-zone-overlay">
+        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="#dca353" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <div class="drop-title i18n-text" data-ko="사진 또는 RAW 파일을 여기에 드래그하세요" data-en="Drag & Drop RAW or Photo here">사진 또는 RAW 파일을 여기에 드래그하세요</div>
+        <div class="drop-subtitle i18n-text" data-ko="Canon, Nikon, Sony, Fuji RAW 및 초고해상도 이미지 완벽 지원" data-en="Full support for Canon, Nikon, Sony, Fuji RAW & High-Res images">Canon, Nikon, Sony, Fuji RAW 및 초고해상도 이미지 완벽 지원</div>
+        <div class="drop-badges">
+          <span class="raw-badge">Canon CR2 / CR3</span>
+          <span class="raw-badge">Nikon NEF</span>
+          <span class="raw-badge">Sony ARW</span>
+          <span class="raw-badge">Fuji RAF</span>
+          <span class="raw-badge">Adobe DNG</span>
+          <span class="raw-badge">TIFF Master</span>
+          <span class="raw-badge">JPEG / PNG / WebP</span>
+        </div>
+      </div>
+
+      <!-- 하단 다중 사진 필름스트립 & 일괄 동기화 바 -->
+      <div id="filmstrip-container">
+        <div class="filmstrip-header">
+          <div class="filmstrip-title" id="btn-toggle-filmstrip" style="cursor:pointer;" title="필름스트립 접기/펼치기">
+            <span id="filmstrip-toggle-icon">▼</span>
+            <span>🎞️ 큐 (<span id="filmstrip-count">0</span>장)</span>
+          </div>
+          <div class="filmstrip-actions">
+            <button class="btn-filmstrip" id="btn-copy-settings" title="현재 사진의 모든 편집 설정 복사">
+              <span>📋 설정 복사</span>
+            </button>
+            <button class="btn-filmstrip" id="btn-paste-settings" title="복사한 설정을 현재 사진에 붙여넣기">
+              <span>📥 붙여넣기</span>
+            </button>
+            <button class="btn-filmstrip primary" id="btn-sync-all" title="현재 편집 설정을 로드된 모든 사진에 일괄 적용">
+              <span>⚡ 전체 사진에 일괄 적용 (Sync All)</span>
+            </button>
+            <button class="btn-filmstrip" id="btn-batch-export" title="모든 사진을 현재 설정으로 순차 일괄 내보내기">
+              <span>📦 전체 일괄 내보내기</span>
+            </button>
+          </div>
+        </div>
+        <div id="filmstrip-list"></div>
+      </div>
+    </div>
+
+    <!-- 우측 다크테이블 스타일 모듈 사이드바 -->
+    <aside id="right-sidebar">
+
+      <!-- 상단 실시간 스코프 모니터 -->
+      <div id="scope-wrapper">
+        <canvas id="scope-canvas"></canvas>
+        <div class="scope-mode-tabs">
+          <button class="scope-tab-btn active" data-mode="waveform">Waveform</button>
+          <button class="scope-tab-btn" data-mode="parade">Parade</button>
+          <button class="scope-tab-btn" data-mode="histogram">Histogram</button>
+          <button class="scope-tab-btn" data-mode="vectorscope">Vector</button>
+        </div>
+      </div>
+
+      <!-- 탭 툴바 -->
+      <div class="module-top-tabs">
+        <button class="tab-icon-btn active" data-tab="all" title="모든 모듈">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+        </button>
+        <button class="tab-icon-btn" data-tab="active" title="활성화된 모듈">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+        </button>
+        <button class="tab-icon-btn" data-tab="tone" title="톤 & 노출">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+        </button>
+        <button class="tab-icon-btn" data-tab="color" title="색상 & 컬러 이퀄라이저">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" fill="url(#grad-tab)"></circle>
+            <defs>
+              <linearGradient id="grad-tab" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff4b4b" />
+                <stop offset="50%" stop-color="#2ecc71" />
+                <stop offset="100%" stop-color="#3498db" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </button>
+        <button class="tab-icon-btn" data-tab="geometry" title="기하학 & 크롭">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+        <button class="tab-icon-btn" data-tab="detail" title="디테일 & 선명도">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 모듈 검색 바 -->
+      <div class="module-search-box">
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" fill="none"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"></line>
+          </svg>
+          <input type="text" id="module-search-input" placeholder="search modules by name or tag">
+        </div>
+      </div>
+
+      <!-- 모듈 리스트 컨테이너 (0. 처음 시작할 때 모든 창 닫힌 상태로 시작) -->
+      <div id="modules-container">
+
+        <!-- ==================== 1. 기하학 / 방향 / 크롭 (5. 온오프 전원 없이 항상 반응) ==================== -->
+
+        <!-- A. crop (6. 비율 고정 버튼 + 자율 크롭) -->
+        <div class="module-card" data-module-name="crop" data-category="geometry" data-tags="aspect ratio cut framing freeform crop">
+          <div class="module-header">
+            <span class="module-title">crop <span class="title-kr">(자르기 / 크롭)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" id="btn-crop-reset" title="크롭 초기화"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; margin-bottom:8px;">
+              <button class="btn-studio btn-crop-aspect" data-aspect="free">자율 (Free)</button>
+              <button class="btn-studio btn-crop-aspect" data-aspect="1">1:1 Square</button>
+              <button class="btn-studio btn-crop-aspect" data-aspect="1.5">3:2 Photo</button>
+              <button class="btn-studio btn-crop-aspect" data-aspect="1.333">4:3 TV</button>
+              <button class="btn-studio btn-crop-aspect" data-aspect="1.777">16:9 Cinema</button>
+              <button class="btn-studio btn-crop-aspect" data-aspect="0.5625">9:16 Shorts</button>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-studio primary" id="btn-crop-apply" style="flex:1;">✔️ 크롭 적용</button>
+              <button class="btn-studio" id="btn-crop-cancel" style="flex:1;">취소</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. orientation (90도 무손실 회전) -->
+        <div class="module-card" data-module-name="orientation" data-category="geometry" data-tags="rotate flip exif">
+          <div class="module-header">
+            <span class="module-title">orientation <span class="title-kr">(방향 / 90도 회전)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="orientation" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div style="display:flex; gap:6px;">
+              <button class="btn-studio" id="btn-rotate-ccw" style="flex:1;">↺ 90° 좌회전</button>
+              <button class="btn-studio" id="btn-rotate-cw" style="flex:1;">↻ 90° 우회전</button>
+            </div>
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <button class="btn-studio" id="btn-flip-h" style="flex:1;">⇄ 좌우 반전</button>
+              <button class="btn-studio" id="btn-flip-v" style="flex:1;">⇅ 상하 반전</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. rotate (미세 각도 회전) -->
+        <div class="module-card" data-module-name="rotate" data-category="geometry" data-tags="rotate angle horizon straight level">
+          <div class="module-header">
+            <span class="module-title">rotate <span class="title-kr">(수평 회전)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="geometry" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <button class="btn-studio primary" id="btn-draw-horizon" style="width:100%; margin-bottom:6px;">
+              <span>📏 2점 클릭으로 수평선 자동 맞춤</span>
+            </button>
+            <div class="control-row">
+              <div class="control-header">
+                <span class="control-label">미세 각도 (angle)</span>
+                <input type="number" class="control-value-input" id="geo-angle-val" value="0.0" step="0.1">
+              </div>
+              <div class="control-slider-wrap">
+                <input type="range" id="geo-angle" min="-45.0" max="45.0" step="0.1" value="0.0" data-default="0.0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- 1. 톤 커브 (1. RGB & S-Curve 에디터 신규 추가) -->
+        <div class="module-card" data-module-name="tone curve" data-category="tone" data-tags="tone curve s-curve rgb luma splines">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="toneCurve" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">tone curve <span class="title-kr">(RGB / S 톤 커브)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn" id="btn-scurve-preset" title="S자 커브 프리셋 적용" style="font-size:10px; padding:2px 4px; border:1px solid #444; border-radius:3px;">S-Curve</button>
+              <button class="mod-action-btn mod-reset-btn" id="btn-reset-tonecurve" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div style="display:flex; gap:4px; margin-bottom:6px;">
+              <button class="btn-studio tc-channel-btn active" data-channel="rgb" style="flex:1;">RGB</button>
+              <button class="btn-studio tc-channel-btn" data-channel="r" style="flex:1; color:#e74c3c;">R</button>
+              <button class="btn-studio tc-channel-btn" data-channel="g" style="flex:1; color:#2ecc71;">G</button>
+              <button class="btn-studio tc-channel-btn" data-channel="b" style="flex:1; color:#3498db;">B</button>
+            </div>
+            <div style="width:100%; height:160px; background:#121212; border:1px solid var(--border-color); border-radius:4px; position:relative;">
+              <canvas id="tc-canvas" style="width:100%; height:100%; display:block; cursor:crosshair;"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. exposure -->
+        <div class="module-card" data-module-name="exposure" data-category="tone" data-tags="exposure ev brightness">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="exposure" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">exposure <span class="title-kr">(노출)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="exposure" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row">
+              <div class="control-header"><span class="control-label">노출 보정 (EV)</span><input type="number" class="control-value-input" id="exp-ev-val" value="0.0" step="0.1"></div>
+              <div class="control-slider-wrap"><input type="range" id="exp-ev" min="-5.0" max="5.0" step="0.05" value="0.0" data-default="0.0"></div>
+            </div>
+            <div class="control-row">
+              <div class="control-header"><span class="control-label">블랙 레벨 (black level)</span><input type="number" class="control-value-input" id="exp-black-val" value="0.0" step="0.01"></div>
+              <div class="control-slider-wrap"><input type="range" id="exp-black" min="-0.2" max="0.2" step="0.005" value="0.0" data-default="0.0"></div>
+            </div>
+            <div class="control-row">
+              <div class="control-header"><span class="control-label">대비 (contrast)</span><input type="number" class="control-value-input" id="exp-contrast-val" value="0.0" step="0.05"></div>
+              <div class="control-slider-wrap"><input type="range" id="exp-contrast" min="-0.8" max="1.0" step="0.02" value="0.0" data-default="0.0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. sigmoid -->
+        <div class="module-card" data-module-name="sigmoid" data-category="tone" data-tags="tone curve filmic contrast">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="sigmoid" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">sigmoid <span class="title-kr">(시그모이드 톤 매핑)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="sigmoid" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="sigmoid-graph-wrap"><canvas id="sigmoid-graph" class="sigmoid-graph-canvas"></canvas></div>
+            <div class="control-row">
+              <div class="control-header"><span class="control-label">대비 (contrast)</span><input type="number" class="control-value-input" id="sig-contrast-val" value="1.0" step="0.05"></div>
+              <div class="control-slider-wrap"><input type="range" id="sig-contrast" min="0.5" max="2.5" step="0.02" value="1.0" data-default="1.0"></div>
+            </div>
+            <div class="control-row">
+              <div class="control-header"><span class="control-label">왜도 (skew)</span><input type="number" class="control-value-input" id="sig-skew-val" value="0.0" step="0.05"></div>
+              <div class="control-slider-wrap"><input type="range" id="sig-skew" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div>
+            </div>
+            <div class="control-row">
+              <div class="control-header"><span class="control-label">숄더 (shoulder)</span><input type="number" class="control-value-input" id="sig-shoulder-val" value="0.0" step="0.05"></div>
+              <div class="control-slider-wrap"><input type="range" id="sig-shoulder" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div>
+            </div>
+            <div class="control-row">
+              <div class="control-header"><span class="control-label">토우 (toe)</span><input type="number" class="control-value-input" id="sig-toe-val" value="0.0" step="0.05"></div>
+              <div class="control-slider-wrap"><input type="range" id="sig-toe" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. tone equalizer -->
+        <div class="module-card" data-module-name="tone equalizer" data-category="tone" data-tags="zone system blacks shadows highlights">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="toneEqualizer" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">tone equalizer <span class="title-kr">(톤 이퀄라이저)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="toneEqualizer" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">블랙 (blacks)</span><input type="number" class="control-value-input" id="te-blacks-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="te-blacks" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label">어두운 영역 (shadows)</span><input type="number" class="control-value-input" id="te-shadows-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="te-shadows" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label">중간 톤 (midtones)</span><input type="number" class="control-value-input" id="te-midtones-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="te-midtones" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label">밝은 영역 (highlights)</span><input type="number" class="control-value-input" id="te-highlights-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="te-highlights" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label">화이트 (whites)</span><input type="number" class="control-value-input" id="te-whites-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="te-whites" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- 5. highlight reconstruction -->
+        <div class="module-card" data-module-name="highlight reconstruction" data-category="tone" data-tags="clipping recovery rolloff">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="highlight" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">highlight reconstruction <span class="title-kr">(하이라이트 복원)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="highlight" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">복원 (recovery)</span><input type="number" class="control-value-input" id="hl-recovery-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="hl-recovery" min="0.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label">압축 (compress)</span><input type="number" class="control-value-input" id="hl-compress-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="hl-compress" min="0.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- ==================== 3. 색상 / 컬러 이퀄라이저 모듈군 ==================== -->
+
+        <!-- 6. white balance -->
+        <div class="module-card" data-module-name="white balance" data-category="color" data-tags="temperature kelvin tint neutral">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="whiteBalance" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">white balance <span class="title-kr">(화이트 밸런스)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="whiteBalance" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:11px; color:var(--text-muted);">스포이드 샘플러</span>
+              <button class="btn-studio" id="wb-eyedropper">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><circle cx="12" cy="12" r="1"></circle></svg>
+                <span>회색 영역 클릭</span>
+              </button>
+            </div>
+            <div class="control-row"><div class="control-header"><span class="control-label">색온도 (Kelvin)</span><input type="number" class="control-value-input" id="wb-temp-val" value="6500" step="50"></div><div class="control-slider-wrap"><input type="range" id="wb-temp" min="2000" max="12000" step="50" value="6500" data-default="6500"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label">틴트 (tint)</span><input type="number" class="control-value-input" id="wb-tint-val" value="0.0" step="0.02"></div><div class="control-slider-wrap"><input type="range" id="wb-tint" min="-1.0" max="1.0" step="0.01" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- 7. color equalizer (2. 8밴드 HSL 이퀄라이저) -->
+        <div class="module-card" data-module-name="color equalizer" data-category="color" data-tags="color equalizer hue saturation brightness hsl curve">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="colorEqualizer" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">color equalizer <span class="title-kr">(색상 이퀄라이저)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" id="btn-reset-ceq" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body" style="padding:8px 10px;">
+            <div class="ceq-subtabs">
+              <button class="ceq-subtab active" data-channel="hue">hue (색조)</button>
+              <button class="ceq-subtab" data-channel="saturation">saturation (채도)</button>
+              <button class="ceq-subtab" data-channel="brightness">brightness (밝기)</button>
+            </div>
+            <div class="ceq-canvas-wrapper"><canvas id="ceq-canvas"></canvas></div>
+            <div class="ceq-color-band"></div>
+          </div>
+        </div>
+
+        <!-- 8. color balance rgb -->
+        <div class="module-card" data-module-name="color balance rgb" data-category="color" data-tags="color balance lift gamma gain shadows midtones highlights">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="colorBalance" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">color balance rgb <span class="title-kr">(컬러 밸런스 RGB)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="colorBalance" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label" style="color:#e74c3c;">Shadows (Red-Cyan)</span><input type="number" class="control-value-input" id="cb-sh-r-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="cb-sh-r" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label" style="color:#2ecc71;">Midtones (Green-Magenta)</span><input type="number" class="control-value-input" id="cb-mid-g-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="cb-mid-g" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label" style="color:#3498db;">Midtones (Blue-Yellow)</span><input type="number" class="control-value-input" id="cb-mid-b-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="cb-mid-b" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label" style="color:#f1c40f;">Highlights (Warm-Cool)</span><input type="number" class="control-value-input" id="cb-hi-r-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="cb-hi-r" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- ==================== 4. 세분화된 개별 디테일 모듈군 (9. 세분화 분리) ==================== -->
+
+        <!-- 9. sharpen -->
+        <div class="module-card" data-module-name="sharpen" data-category="detail" data-tags="sharpen edge clarity">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="sharpen" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">sharpen <span class="title-kr">(선명도 / 샤프닝)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="sharpen" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">샤프닝 강도 (amount)</span><input type="number" class="control-value-input" id="sh-amount-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="sh-amount" min="0.0" max="2.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- 10. local contrast -->
+        <div class="module-card" data-module-name="local contrast" data-category="detail" data-tags="local contrast detail clarity">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="localContrast" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">local contrast <span class="title-kr">(로컬 대비)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="localContrast" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">디테일 (detail)</span><input type="number" class="control-value-input" id="lc-detail-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="lc-detail" min="0.0" max="2.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+            <div class="control-row"><div class="control-header"><span class="control-label">명료도 (clarity)</span><input type="number" class="control-value-input" id="lc-clarity-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="lc-clarity" min="-1.0" max="1.5" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- 11. denoise -->
+        <div class="module-card" data-module-name="denoise" data-category="detail" data-tags="denoise noise reduction smoothing">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="denoise" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">denoise <span class="title-kr">(노이즈 감소)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="denoise" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">노이즈 감소 (strength)</span><input type="number" class="control-value-input" id="dn-strength-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="dn-strength" min="0.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- 12. blur (10. 가우시안 블러 모듈) -->
+        <div class="module-card" data-module-name="blur" data-category="detail" data-tags="blur gaussian softening defocus">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="blur" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">blur <span class="title-kr">(가우시안 블러 / 흐림)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="blur" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">흐림 반경 (radius)</span><input type="number" class="control-value-input" id="bl-radius-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="bl-radius" min="0.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- 13. film grain -->
+        <div class="module-card" data-module-name="film grain" data-category="detail" data-tags="grain film analog texture">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="grain" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">film grain <span class="title-kr">(필름 그레인)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="grain" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">그레인 양 (amount)</span><input type="number" class="control-value-input" id="gr-amount-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="gr-amount" min="0.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+        <!-- 14. vignette -->
+        <div class="module-card" data-module-name="vignette" data-category="detail" data-tags="vignette lens shading border">
+          <div class="module-header">
+            <button class="module-power-btn" data-module="vignette" title="On/Off">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
+            <span class="module-title">vignette <span class="title-kr">(비네팅)</span></span>
+            <div class="module-header-actions">
+              <button class="mod-action-btn mod-reset-btn" data-module="vignette" title="리셋"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>
+            </div>
+          </div>
+          <div class="module-body">
+            <div class="control-row"><div class="control-header"><span class="control-label">비네팅 강도 (amount)</span><input type="number" class="control-value-input" id="vg-amount-val" value="0.0" step="0.05"></div><div class="control-slider-wrap"><input type="range" id="vg-amount" min="-1.0" max="1.0" step="0.02" value="0.0" data-default="0.0"></div></div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- 3. 하단 상태 표시줄 -->
+  <footer id="status-bar">
+    <div class="status-left">
+      <span id="status-camera">카메라/RAW 정보 대기</span>
+      <span>•</span>
+      <span id="status-res">해상도: -</span>
+    </div>
+    <div class="status-right">
+      <span>단축키: Ctrl+Z (Undo) | Ctrl+Y (Redo) | B (Before/After) | 휠 (줌) | 더블클릭 (100%)</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- 프리셋 관리 모달 (저장, 불러오기, 파일 내보내기, 일괄 프리셋) -->
+<div class="modal-backdrop" id="preset-modal">
+  <div class="modal-window" style="max-width: 540px;">
+    <div class="modal-header">
+      <span>💾 프리셋 관리자 (Preset Manager)</span>
+      <button class="mod-action-btn modal-close-btn">&times;</button>
+    </div>
+    <div class="modal-body" style="gap: 16px;">
+      <!-- 현재 설정 저장하기 -->
+      <div style="background: #1e1e1e; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+        <div style="font-weight: 600; font-size: 13px; color: #fff; margin-bottom: 8px;">➕ 현재 편집 설정 프리셋으로 저장</div>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="preset-name-input" placeholder="프리셋 이름 (예: 따뜻한 골든아워)" style="flex: 1; background: #121212; border: 1px solid #333; color: #fff; padding: 7px 10px; border-radius: 4px; font-size: 13px;">
+          <button class="btn-studio primary" id="btn-save-current-preset" style="white-space: nowrap;">저장</button>
+        </div>
+      </div>
+
+      <!-- 내장 프로 프리셋 -->
+      <div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">✨ 내장 시그니처 룩</div>
+        <div id="built-in-presets-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;"></div>
+      </div>
+
+      <!-- 사용자 저장 프리셋 목록 -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">📂 저장된 사용자 프리셋</span>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-studio" id="btn-import-preset-file" style="font-size: 11px; padding: 3px 8px;">📥 파일에서 불러오기</button>
+            <input type="file" id="preset-file-input" accept=".json,.slpreset" style="display: none;">
+          </div>
+        </div>
+        <div id="user-presets-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+          <div style="color: #666; font-size: 12px; text-align: center; padding: 12px;">저장된 사용자 프리셋이 없습니다.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-studio modal-close-btn">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 내보내기 다이얼로그 모달 (1. DNG 출력 지원 추가) -->
+<div class="modal-backdrop" id="export-modal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <span>고해상도 이미지 내보내기 (Export)</span>
+      <button class="mod-action-btn modal-close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="control-row">
+        <label style="color:var(--text-muted); margin-bottom:4px;">파일 포맷</label>
+        <select id="export-format" style="background:#181818; color:#fff; border:1px solid var(--border-color); padding:6px; border-radius:4px;">
+          <option value="image/dng">Adobe DNG RAW (.dng)</option>
+          <option value="image/jpeg" selected>JPEG (고화질 사진 마스터)</option>
+          <option value="image/png">PNG (무손실 압축)</option>
+          <option value="image/webp">WebP (차세대 포맷)</option>
+        </select>
+      </div>
+      <div class="control-row" id="row-quality">
+        <label style="color:var(--text-muted); margin-bottom:4px;">품질 (Quality)</label>
+        <select id="export-quality" style="background:#181818; color:#fff; border:1px solid var(--border-color); padding:6px; border-radius:4px;">
+          <option value="1.0">100% (최고 품질)</option>
+          <option value="0.95" selected>95% (권장 - 스튜디오 마스터)</option>
+          <option value="0.85">85% (표준 웹)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-studio modal-close-btn">취소</button>
+      <button class="btn-studio primary" id="btn-do-export">내보내기 다운로드</button>
+    </div>
+  </div>
+</div>
+
+<!-- 스크립트 로드 순서 -->
+<script src="js/dng-exporter.js"></script>
+<script src="js/raw-parser.js"></script>
+<script src="js/webgl-engine.js"></script>
+<script src="js/scope.js"></script>
+<script src="js/color-equalizer.js"></script>
+<script src="js/tone-curve.js"></script>
+<script src="js/crop-horizon.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

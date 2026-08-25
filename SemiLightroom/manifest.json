@@ -1,0 +1,21 @@
+{
+  "name": "SemiLightroom RAW Editor",
+  "short_name": "SemiLightroom",
+  "description": "고성능 RAW 및 고해상도 사진 편집 웹 애플리케이션",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#1e1e1e",
+  "icons": [
+    {
+      "src": "../icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "../icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
