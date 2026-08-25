@@ -25,18 +25,25 @@
       color: white;
       -webkit-user-select: none;
       user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+    .animate-fade-in { animation: fadeIn 0.25s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+    
+    /* 커스텀 스크롤바 */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect, useRef, useMemo } = React;
 
-    // --- Icons ---
+    // --- 아이콘 컴포넌트 ---
     const Play = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>;
     const Pause = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>;
     const SkipForward = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>;
@@ -46,47 +53,61 @@
     const RotateCcw = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>;
     const Dumbbell = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m14.536 14.536-4.243-4.243"></path><path d="m12.414 16.657-2.121-2.122"></path><path d="m9.464 9.464 2.122 2.122"></path><path d="m4.515 11.05 4.95-4.95"></path><path d="m20.172 13.636-4.95 4.95"></path><path d="m17.343 7.98-2.121-2.121"></path><path d="m11.687 13.636 2.121 2.122"></path></svg>;
     const Sun = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M4.93 4.93l1.41 1.41"></path><path d="M17.66 17.66l1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M6.34 17.66l-1.41 1.41"></path><path d="M19.07 4.93l-1.41 1.41"></path></svg>;
+    const Settings = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+    const Trash = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
+    const Plus = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+    const X = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+    const ArrowUp = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>;
+    const ArrowDown = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
 
-    const REST_TIME = 120;
-
-    const routine = [
-      { name: '풀업', weight: '맨몸', reps: '12회', sets: 3, query: '풀업+자세' },
-      { name: '덤벨 프레스', weight: '14kg 양손', reps: '12회', sets: 3, query: '덤벨+프레스+자세' },
-      { name: '불가리안 스플릿 스쿼트', weight: '14kg 양손', reps: '각 12회', sets: 3, query: '불가리안+스플릿+스쿼트+자세' },
-      { name: '해머컬 & 이두컬', weight: '7.5kg 양손', reps: '해머 13회 + 이두 12회', sets: 3, query: '해머컬+이두컬+자세' },
-      { name: '원암 오버헤드 익스텐션', weight: '7.5kg', reps: '각 12회', sets: 3, query: '원암+오버헤드+익스텐션+자세' },
-      { name: '사레레', weight: '7.5kg 양손', reps: '12회', sets: 3, query: '사이드+레터럴+레이즈+자세' },
+    // --- 기본 초기값 설정 ---
+    const DEFAULT_REST_TIME = 120;
+    const DEFAULT_ROUTINE = [
+      { id: '1', name: '풀업', weight: '맨몸', reps: '12회', sets: 3, query: '풀업+자세' },
+      { id: '2', name: '덤벨 프레스', weight: '14kg 양손', reps: '12회', sets: 3, query: '덤벨+프레스+자세' },
+      { id: '3', name: '불가리안 스플릿 스쿼트', weight: '14kg 양손', reps: '각 12회', sets: 3, query: '불가리안+스플릿+스쿼트+자세' },
+      { id: '4', name: '해머컬 & 이두컬', weight: '7.5kg 양손', reps: '해머 13회 + 이두 12회', sets: 3, query: '해머컬+이두컬+자세' },
+      { id: '5', name: '원암 오버헤드 익스텐션', weight: '7.5kg', reps: '각 12회', sets: 3, query: '원암+오버헤드+익스텐션+자세' },
+      { id: '6', name: '사레레', weight: '7.5kg 양손', reps: '12회', sets: 3, query: '사이드+레터럴+레이즈+자세' },
     ];
 
-    const steps = [];
-    routine.forEach((exercise, eIndex) => {
-      for (let i = 1; i <= exercise.sets; i++) {
-        steps.push({
-          type: 'workout',
-          exerciseIndex: eIndex + 1,
-          totalExercises: routine.length,
-          name: exercise.name,
-          set: i,
-          totalSets: exercise.sets,
-          query: exercise.query
-        });
-        
-        const isLastExercise = eIndex === routine.length - 1 && i === exercise.sets;
-        if (!isLastExercise) {
-          steps.push({
-            type: 'rest',
-            exerciseIndex: eIndex + 1,
-            totalExercises: routine.length,
-            name: exercise.name,
-            set: i,
-            totalSets: exercise.sets,
-            query: exercise.query
-          });
+    const STORAGE_KEY_ROUTINE = 'workout_routine_custom_v2';
+    const STORAGE_KEY_REST_TIME = 'workout_rest_time_custom_v2';
+
+    // 로컬 스토리지 불러오기 헬퍼
+    function loadSavedRoutine() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_ROUTINE);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
+      } catch (e) {
+        console.warn('루틴 불러오기 실패:', e);
       }
-    });
+      return DEFAULT_ROUTINE;
+    }
+
+    function loadSavedRestTime() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_REST_TIME);
+        if (saved) {
+          const num = parseInt(saved, 10);
+          if (!isNaN(num) && num > 0) return num;
+        }
+      } catch (e) {
+        console.warn('휴식시간 불러오기 실패:', e);
+      }
+      return DEFAULT_REST_TIME;
+    }
 
     function App() {
+      // --- 커스텀 데이터 상태 관리 ---
+      const [routine, setRoutine] = useState(loadSavedRoutine);
+      const [restTime, setRestTime] = useState(loadSavedRestTime);
+      const [isSettingOpen, setIsSettingOpen] = useState(false);
+
+      // --- 타이머 실행 상태 ---
       const [stepIndex, setStepIndex] = useState(-1);
       const [time, setTime] = useState(0);
       const [isRunning, setIsRunning] = useState(false);
@@ -94,6 +115,48 @@
       const audioCtxRef = useRef(null);
       const wakeLockRef = useRef(null);
 
+      // 설정 임시 편집 상태 (모달용)
+      const [tempRoutine, setTempRoutine] = useState(routine);
+      const [tempRestTime, setTempRestTime] = useState(restTime);
+
+      // 루틴 변경 시 steps 동적 계산
+      const steps = useMemo(() => {
+        const result = [];
+        routine.forEach((exercise, eIndex) => {
+          const totalSets = Math.max(1, parseInt(exercise.sets, 10) || 1);
+          for (let i = 1; i <= totalSets; i++) {
+            result.push({
+              type: 'workout',
+              exerciseIndex: eIndex + 1,
+              totalExercises: routine.length,
+              name: exercise.name,
+              weight: exercise.weight,
+              reps: exercise.reps,
+              set: i,
+              totalSets: totalSets,
+              query: exercise.query || exercise.name + '+자세'
+            });
+            
+            const isLastExercise = eIndex === routine.length - 1 && i === totalSets;
+            if (!isLastExercise) {
+              result.push({
+                type: 'rest',
+                exerciseIndex: eIndex + 1,
+                totalExercises: routine.length,
+                name: exercise.name,
+                weight: exercise.weight,
+                reps: exercise.reps,
+                set: i,
+                totalSets: totalSets,
+                query: exercise.query || exercise.name + '+자세'
+              });
+            }
+          }
+        });
+        return result;
+      }, [routine]);
+
+      // 화면 켜짐 방지 (Wake Lock)
       const requestWakeLock = async () => {
         try {
           if ('wakeLock' in navigator) {
@@ -125,8 +188,9 @@
           document.removeEventListener('visibilitychange', handleVisibilityChange);
           releaseWakeLock();
         };
-      }, [stepIndex]);
+      }, [stepIndex, steps.length]);
 
+      // 사운드 효과
       const initAudio = () => {
         if (!audioCtxRef.current) {
           const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -175,6 +239,7 @@
         }
       };
 
+      // 1초 단위 타이머
       useEffect(() => {
         let interval = null;
         const currentStep = steps[stepIndex];
@@ -185,15 +250,16 @@
           }, 1000);
         }
         return () => clearInterval(interval);
-      }, [isRunning, stepIndex]);
+      }, [isRunning, stepIndex, steps]);
 
+      // 휴식 완료 시 소리 재생 & 다음 운동으로 자동 이동
       useEffect(() => {
         const currentStep = steps[stepIndex];
         if (currentStep?.type === 'rest' && time <= 0 && isRunning) {
           playTtododongX3();
           handleNextStep();
         }
-      }, [time, isRunning, stepIndex]);
+      }, [time, isRunning, stepIndex, steps]);
 
       const handleNextStep = async () => {
         if (stepIndex === -1) {
@@ -212,7 +278,7 @@
         setStepIndex(nextIdx);
         
         if (steps[nextIdx].type === 'rest') {
-          setTime(REST_TIME);
+          setTime(restTime);
           setIsRunning(true);
         } else {
           setTime(0);
@@ -233,7 +299,7 @@
         setStepIndex(prevIdx);
         
         if (steps[prevIdx].type === 'rest') {
-          setTime(REST_TIME);
+          setTime(restTime);
           setIsRunning(true);
         } else {
           setTime(0);
@@ -261,6 +327,85 @@
         return `${m}:${s}`;
       };
 
+      // --- 설정 모달 열기 & 저장 로직 ---
+      const openSettings = () => {
+        setTempRoutine(JSON.parse(JSON.stringify(routine)));
+        setTempRestTime(restTime);
+        setIsSettingOpen(true);
+      };
+
+      const saveSettings = () => {
+        const validTime = Math.max(5, parseInt(tempRestTime, 10) || DEFAULT_REST_TIME);
+        const validRoutine = tempRoutine.map(item => ({
+          ...item,
+          name: item.name.trim() || '새 운동',
+          sets: Math.max(1, parseInt(item.sets, 10) || 1),
+          query: item.query ? item.query.trim() : item.name.trim() + '+자세'
+        }));
+
+        setRoutine(validRoutine);
+        setRestTime(validTime);
+
+        // 브라우저 localStorage에 영구 저장
+        try {
+          localStorage.setItem(STORAGE_KEY_ROUTINE, JSON.stringify(validRoutine));
+          localStorage.setItem(STORAGE_KEY_REST_TIME, validTime.toString());
+        } catch (e) {
+          console.error('설정 저장 실패:', e);
+        }
+
+        setIsSettingOpen(false);
+        resetWorkout(); // 루틴이 바뀌었으므로 초기화
+      };
+
+      const resetToDefault = () => {
+        if (window.confirm('기본 운동 루틴과 휴식 시간(120초)으로 초기화하시겠습니까?')) {
+          setTempRoutine(JSON.parse(JSON.stringify(DEFAULT_ROUTINE)));
+          setTempRestTime(DEFAULT_REST_TIME);
+        }
+      };
+
+      // 운동 항목 추가/삭제/이동 핸들러
+      const handleAddExercise = () => {
+        const newId = Date.now().toString();
+        setTempRoutine([...tempRoutine, {
+          id: newId,
+          name: '새 운동',
+          weight: '10kg',
+          reps: '10회',
+          sets: 3,
+          query: '운동+자세'
+        }]);
+      };
+
+      const handleRemoveExercise = (idx) => {
+        if (tempRoutine.length <= 1) {
+          alert('최소 1개 이상의 운동이 있어야 합니다.');
+          return;
+        }
+        setTempRoutine(tempRoutine.filter((_, i) => i !== idx));
+      };
+
+      const handleMoveExercise = (idx, direction) => {
+        const newIdx = idx + direction;
+        if (newIdx < 0 || newIdx >= tempRoutine.length) return;
+        const copy = [...tempRoutine];
+        const temp = copy[idx];
+        copy[idx] = copy[newIdx];
+        copy[newIdx] = temp;
+        setTempRoutine(copy);
+      };
+
+      const handleExerciseChange = (idx, field, value) => {
+        const copy = [...tempRoutine];
+        copy[idx][field] = value;
+        // 이름 변경 시 query도 기본 업데이트
+        if (field === 'name' && (!copy[idx].query || copy[idx].query.endsWith('+자세'))) {
+          copy[idx].query = value + '+자세';
+        }
+        setTempRoutine(copy);
+      };
+
       const currentStep = steps[stepIndex];
       const isFinished = stepIndex >= steps.length;
       const isIdle = stepIndex === -1;
@@ -271,11 +416,14 @@
       if (isFinished) bgTheme = "bg-blue-950 border-blue-500/40";
 
       return (
-        <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-2 sm:p-4 font-sans select-none">
+        <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-2 sm:p-4 font-sans select-none relative overflow-x-hidden">
+          
+          {/* 메인 타이머 카드 박스 */}
           <div className={`w-full max-w-[440px] aspect-square ${bgTheme} border-2 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-2xl p-3 sm:p-5 relative transition-colors duration-500 overflow-hidden`}>
             
+            {/* 상단 헤더 */}
             <div className="flex items-center justify-between text-xs text-gray-400 border-b border-white/10 pb-1.5 shrink-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <a 
                   href="../index.html" 
                   title="메인 허브로 돌아가기" 
@@ -285,7 +433,7 @@
                 </a>
                 <div className="flex items-center gap-1 font-bold text-gray-200">
                   <Dumbbell className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>주 3회 루틴</span>
+                  <span>운동 루틴</span>
                 </div>
               </div>
 
@@ -304,17 +452,28 @@
                     {currentStep.exerciseIndex} / {routine.length}
                   </span>
                 )}
+                {/* 루틴 커스텀 설정 버튼 */}
+                <button
+                  onClick={openSettings}
+                  title="루틴 및 휴식시간 수정"
+                  className="p-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition-all active:scale-95 flex items-center gap-1 text-[10px]"
+                >
+                  <Settings className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>설정</span>
+                </button>
               </div>
             </div>
 
+            {/* 중앙 컨텐츠 영역 */}
             <div className="flex-1 flex flex-col items-center justify-center text-center my-auto py-1 overflow-hidden">
               
+              {/* 1. 시작 전 (대기) 화면 */}
               {isIdle && (
                 <div className="animate-fade-in flex flex-col items-center justify-center">
                   <h2 className="text-xl sm:text-2xl font-black text-white mb-1">운동 시작하기</h2>
-                  <p className="text-gray-400 text-xs mb-3">
-                    6개 운동 (해머컬&이두컬 통합)<br/>
-                    <span className="text-emerald-400 font-medium">휴식 2분 · 화면 꺼짐 방지</span>
+                  <p className="text-gray-400 text-xs mb-3 leading-relaxed">
+                    총 <strong className="text-indigo-300">{routine.length}개 운동</strong> · 총 <strong className="text-indigo-300">{steps.filter(s => s.type === 'workout').length}세트</strong><br/>
+                    <span className="text-emerald-400 font-medium">휴식 {restTime}초 ({Math.floor(restTime/60)}분 {restTime%60 ? (restTime%60)+'초' : ''}) · 화면 꺼짐 방지</span>
                   </p>
                   <div 
                     onClick={handleNextStep}
@@ -325,9 +484,10 @@
                 </div>
               )}
 
+              {/* 2. 진행 중 공통 세트 프로그레스 바 */}
               {!isIdle && !isFinished && (
                 <div className="flex flex-col items-center mb-2 shrink-0">
-                  <div className="flex items-center gap-1.5 mb-1">
+                  <div className="flex items-center gap-1.5 mb-1 max-w-[280px] overflow-x-auto py-0.5">
                     {Array.from({ length: currentStep.totalSets }).map((_, idx) => {
                       const setNum = idx + 1;
                       const isCurrent = setNum === currentStep.set;
@@ -359,9 +519,10 @@
                 </div>
               )}
 
+              {/* 3. 운동 진행 중 카드 */}
               {!isIdle && !isFinished && currentStep?.type === 'workout' && (
                 <div className="animate-fade-in w-full flex flex-col items-center justify-center px-2 my-auto">
-                  <div className="w-full bg-slate-800/80 border border-indigo-500/40 rounded-2xl p-4 sm:p-5 shadow-lg backdrop-blur-sm flex flex-col items-center justify-center">
+                  <div className="w-full bg-slate-800/80 border border-indigo-500/40 rounded-2xl p-3 sm:p-4 shadow-lg backdrop-blur-sm flex flex-col items-center justify-center">
                     <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mb-1">
                       진행 중인 운동
                     </span>
@@ -369,14 +530,29 @@
                       href={`https://www.youtube.com/results?search_query=${currentStep.query}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-2xl sm:text-3xl font-black text-blue-300 hover:text-blue-100 underline decoration-blue-400/60 underline-offset-4 transition-all text-center leading-tight line-clamp-2"
+                      className="text-xl sm:text-2xl font-black text-blue-300 hover:text-blue-100 underline decoration-blue-400/60 underline-offset-4 transition-all text-center leading-tight line-clamp-2 mb-2"
                     >
                       {currentStep.name} 🔗
                     </a>
+
+                    {/* 커스텀 무게 및 횟수 배지 */}
+                    <div className="flex items-center gap-2 text-xs font-semibold">
+                      {currentStep.weight && (
+                        <span className="px-2.5 py-1 rounded-lg bg-indigo-950/70 border border-indigo-500/30 text-indigo-200">
+                          ⚖️ {currentStep.weight}
+                        </span>
+                      )}
+                      {currentStep.reps && (
+                        <span className="px-2.5 py-1 rounded-lg bg-purple-950/70 border border-purple-500/30 text-purple-200">
+                          🔁 {currentStep.reps}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
 
+              {/* 4. 휴식 타이머 화면 */}
               {!isIdle && !isFinished && currentStep?.type === 'rest' && (
                 <div className="animate-fade-in w-full flex flex-col items-center justify-center my-auto">
                   <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-emerald-900/40 border-4 border-emerald-500 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)] relative">
@@ -391,6 +567,7 @@
                 </div>
               )}
 
+              {/* 5. 운동 완료 화면 */}
               {isFinished && (
                 <div className="animate-fade-in flex flex-col items-center justify-center">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-blue-600/20 border-4 border-blue-400 flex items-center justify-center shadow-[0_0_25px_rgba(59,130,246,0.4)] mb-2">
@@ -403,6 +580,7 @@
 
             </div>
 
+            {/* 하단 컨트롤 버튼 바 */}
             <div className="pt-1.5 border-t border-white/10 flex flex-col gap-1.5 shrink-0">
               
               <button
@@ -450,6 +628,206 @@
             </div>
 
           </div>
+
+          {/* ⚙️ [모달] 루틴 및 수치 커스텀 설정 창 */}
+          {isSettingOpen && (
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+              <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+                
+                {/* 모달 헤더 */}
+                <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-indigo-400" />
+                    <h3 className="font-bold text-sm sm:text-base text-white">운동 루틴 및 수치 설정</h3>
+                  </div>
+                  <button 
+                    onClick={() => setIsSettingOpen(false)}
+                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* 모달 본문 스크롤 영역 */}
+                <div className="p-4 overflow-y-auto space-y-4 text-xs sm:text-sm flex-1">
+                  
+                  {/* 1. 휴식 시간 설정 섹션 */}
+                  <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
+                    <label className="font-bold text-emerald-400 block mb-1.5 flex items-center justify-between">
+                      <span>⏱️ 세트 간 휴식 시간 (초 단위)</span>
+                      <span className="text-white text-xs">{tempRestTime}초 ({Math.floor(tempRestTime/60)}분 {tempRestTime%60 ? (tempRestTime%60)+'초' : ''})</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        min="5" 
+                        max="600"
+                        step="5"
+                        value={tempRestTime}
+                        onChange={(e) => setTempRestTime(Math.max(5, parseInt(e.target.value, 10) || 5))}
+                        className="w-24 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center text-white font-bold focus:outline-none focus:border-emerald-500"
+                      />
+                      <div className="flex gap-1 flex-1">
+                        {[60, 90, 120, 150, 180].map((sec) => (
+                          <button
+                            key={sec}
+                            onClick={() => setTempRestTime(sec)}
+                            className={`flex-1 py-1 rounded-lg text-[11px] font-semibold border transition-all ${
+                              tempRestTime === sec 
+                                ? 'bg-emerald-600 border-emerald-400 text-white' 
+                                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'
+                            }`}
+                          >
+                            {sec}초
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. 운동 목록 편집 섹션 */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-indigo-300">🏋️ 등록된 운동 목록 ({tempRoutine.length}개)</span>
+                      <button
+                        onClick={handleAddExercise}
+                        className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1 transition-all shadow-sm active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> 운동 추가
+                      </button>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {tempRoutine.map((ex, idx) => (
+                        <div key={ex.id || idx} className="bg-slate-800/80 border border-slate-700/70 rounded-xl p-3 flex flex-col gap-2 relative">
+                          
+                          {/* 운동 상단: 순서 이동 및 삭제 버튼 */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
+                              #{idx + 1}번 운동
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button 
+                                onClick={() => handleMoveExercise(idx, -1)}
+                                disabled={idx === 0}
+                                className="p-1 rounded bg-slate-900 hover:bg-slate-700 text-slate-300 disabled:opacity-30"
+                                title="위로 이동"
+                              >
+                                <ArrowUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => handleMoveExercise(idx, 1)}
+                                disabled={idx === tempRoutine.length - 1}
+                                className="p-1 rounded bg-slate-900 hover:bg-slate-700 text-slate-300 disabled:opacity-30"
+                                title="아래로 이동"
+                              >
+                                <ArrowDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => handleRemoveExercise(idx)}
+                                className="p-1 rounded bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/40 ml-1"
+                                title="운동 삭제"
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* 운동명 입력 */}
+                          <div>
+                            <label className="text-[10px] text-slate-400 block mb-0.5">운동 이름</label>
+                            <input 
+                              type="text" 
+                              value={ex.name}
+                              onChange={(e) => handleExerciseChange(idx, 'name', e.target.value)}
+                              placeholder="예: 덤벨 프레스"
+                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-indigo-500"
+                            />
+                          </div>
+
+                          {/* 세트수 / 무게 / 횟수 그리드 */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div>
+                              <label className="text-[10px] text-slate-400 block mb-0.5">세트 수</label>
+                              <input 
+                                type="number" 
+                                min="1"
+                                max="20"
+                                value={ex.sets}
+                                onChange={(e) => handleExerciseChange(idx, 'sets', Math.max(1, parseInt(e.target.value, 10) || 1))}
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-center text-white font-bold focus:outline-none focus:border-indigo-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400 block mb-0.5">무게/강도</label>
+                              <input 
+                                type="text" 
+                                value={ex.weight}
+                                onChange={(e) => handleExerciseChange(idx, 'weight', e.target.value)}
+                                placeholder="예: 14kg 양손"
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-slate-400 block mb-0.5">횟수/목표</label>
+                              <input 
+                                type="text" 
+                                value={ex.reps}
+                                onChange={(e) => handleExerciseChange(idx, 'reps', e.target.value)}
+                                placeholder="예: 12회"
+                                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* 유튜브 검색 키워드 */}
+                          <div>
+                            <label className="text-[10px] text-slate-500 block mb-0.5">유튜브 자세 검색어</label>
+                            <input 
+                              type="text" 
+                              value={ex.query || ''}
+                              onChange={(e) => handleExerciseChange(idx, 'query', e.target.value)}
+                              placeholder="예: 덤벨+프레스+자세"
+                              className="w-full bg-slate-950/70 border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-300 focus:outline-none focus:border-indigo-500"
+                            />
+                          </div>
+
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 모달 하단 버튼 바 */}
+                <div className="p-3.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <button
+                    onClick={resetToDefault}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 transition-all"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> 기본값 초기화
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsSettingOpen(false)}
+                      className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-all"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={saveSettings}
+                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/30"
+                    >
+                      저장 및 적용
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
         </div>
       );
     }
