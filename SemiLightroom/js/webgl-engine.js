@@ -5,7 +5,9 @@
 class WebGLEngine {
   constructor(canvas) {
     this.canvas = canvas;
-    this.gl = canvas.getContext('webgl', { preserveDrawingBuffer: true, antialias: true }) ||
+    // WebGL2 우선 활성화 (16-bit Float Texture RGBA16F 완벽 지원)
+    this.gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true, antialias: true }) ||
+              canvas.getContext('webgl', { preserveDrawingBuffer: true, antialias: true }) ||
               canvas.getContext('experimental-webgl', { preserveDrawingBuffer: true, antialias: true });
     
     if (!this.gl) {
@@ -13,10 +15,17 @@ class WebGLEngine {
       return;
     }
 
+    // 16-bit / 32-bit Float Texture 가속 확장 활성화
+    const gl = this.gl;
+    this.extFloat = gl.getExtension('OES_texture_float') || gl.getExtension('EXT_color_buffer_float');
+    this.extHalfFloat = gl.getExtension('OES_texture_half_float');
+    this.extLinear = gl.getExtension('OES_texture_float_linear') || gl.getExtension('OES_texture_half_float_linear');
+
     this.sourceTexture = null;
     this.curveTexture = null;
     this.imageWidth = 1920;
     this.imageHeight = 1080;
+    this.is16BitSource = false;
     this.program = null;
     this.quadBuffer = null;
 
@@ -568,7 +577,7 @@ class WebGLEngine {
     return program;
   }
 
-  setImage(imageBitmap) {
+  setImage(imageBitmap, raw16FloatArray = null) {
     const gl = this.gl;
     this.imageWidth = imageBitmap.width;
     this.imageHeight = imageBitmap.height;
@@ -585,7 +594,23 @@ class WebGLEngine {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
+    // 16-bit Float 원본 센서 데이터가 제공된 경우: Float32Array를 16-bit/32-bit Float Texture로 직접 주입!
+    if (raw16FloatArray instanceof Float32Array) {
+      this.is16BitSource = true;
+      try {
+        if (gl.RGBA16F) {
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, this.imageWidth, this.imageHeight, 0, gl.RGBA, gl.FLOAT, raw16FloatArray);
+        } else {
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.imageWidth, this.imageHeight, 0, gl.RGBA, gl.FLOAT, raw16FloatArray);
+        }
+      } catch (e) {
+        console.warn('Float Texture Fallback to Bitmap:', e);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
+      }
+    } else {
+      this.is16BitSource = false;
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
+    }
     this.render();
   }
 
@@ -914,9 +939,8 @@ class WebGLEngine {
     return offCanvas.toDataURL(format, quality);
   }
 
-  exportDNG() {
+  exportTIFF16() {
     if (!this.sourceTexture) return null;
-
     let outW = this.imageWidth;
     let outH = this.imageHeight;
 
@@ -934,8 +958,31 @@ class WebGLEngine {
     const pixels = this.renderToPixels(outW, outH);
     if (!pixels) return null;
 
-    const dngBuffer = DngExporter.encodeRGB(new Uint8Array(pixels.buffer), outW, outH);
-    return new Blob([dngBuffer], { type: 'image/x-adobe-dng' });
+    const tiffBuffer = window.DngExporter.encodeTIFF16(pixels, outW, outH);
+    return new Blob([tiffBuffer], { type: 'image/tiff' });
+  }
+
+  exportDNG() {
+    if (!this.sourceTexture) return null;
+    let outW = this.imageWidth;
+    let outH = this.imageHeight;
+
+    if (this.params.orientation.rotate === 90 || this.params.orientation.rotate === 270) {
+      outW = this.imageHeight;
+      outH = this.imageWidth;
+    }
+
+    const cr = this.params.crop;
+    if (cr && cr.enabled) {
+      outW = Math.max(1, Math.round(outW * cr.width));
+      outH = Math.max(1, Math.round(outH * cr.height));
+    }
+
+    const pixels = this.renderToPixels(outW, outH);
+    if (!pixels) return null;
+
+    const dngBuffer = window.DngExporter.encodeDNG16(pixels, outW, outH);
+    return new Blob([dngBuffer], { type: 'image/dng' });
   }
 
   samplePixel(x, y) {

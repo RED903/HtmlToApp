@@ -10,8 +10,8 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>SemiLightroom - RAW & Pro Photo Studio</title>
-  <link rel="manifest" href="manifest.json?v=2.2.0">
-  <link rel="stylesheet" href="css/style.css?v=2.2.0">
+  <link rel="manifest" href="manifest.json?v=3.1.0">
+  <link rel="stylesheet" href="css/style.css?v=3.1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -608,6 +608,8 @@
       <span id="status-camera">카메라/RAW 정보 대기</span>
       <span>•</span>
       <span id="status-res">해상도: -</span>
+      <span>•</span>
+      <span id="status-bitdepth" style="background:#2a3b2a; color:#4ade80; padding:2px 8px; border-radius:4px; font-weight:600; font-size:11px; border:1px solid #166534;">14/16-bit Float Master</span>
     </div>
     <div class="status-right">
       <span>단축키: Ctrl+Z (Undo) | Ctrl+Y (Redo) | B (Before/After) | 휠 (줌) | 더블클릭 (100%)</span>
@@ -670,7 +672,8 @@
       <div class="control-row">
         <label style="color:var(--text-muted); margin-bottom:4px;">파일 포맷</label>
         <select id="export-format" style="background:#181818; color:#fff; border:1px solid var(--border-color); padding:6px; border-radius:4px;">
-          <option value="image/dng">Adobe DNG RAW (.dng)</option>
+          <option value="image/tiff">TIFF 16-bit Master (.tif / 65,536단계 무손실)</option>
+          <option value="image/dng">Adobe DNG 16-bit RAW (.dng)</option>
           <option value="image/jpeg" selected>JPEG (고화질 사진 마스터)</option>
           <option value="image/png">PNG (무손실 압축)</option>
           <option value="image/webp">WebP (차세대 포맷)</option>
@@ -692,15 +695,19 @@
   </div>
 </div>
 
-<!-- 스크립트 로드 순서 (캐시 방지 쿼리스트링 적용) -->
-<script src="js/dng-exporter.js?v=2.2.0"></script>
-<script src="js/raw-parser.js?v=2.2.0"></script>
-<script src="js/webgl-engine.js?v=2.2.0"></script>
-<script src="js/scope.js?v=2.2.0"></script>
-<script src="js/color-equalizer.js?v=2.2.0"></script>
-<script src="js/tone-curve.js?v=2.2.0"></script>
-<script src="js/crop-horizon.js?v=2.2.0"></script>
-<script src="js/app.js?v=2.2.0"></script>
+<!-- 0. C++ dcraw / LibRaw WebAssembly 바이너리 디코더 코어 -->
+<script src="https://cdn.jsdelivr.net/npm/dcraw@0.1.1/dist/dcraw.min.js"></script>
+
+<!-- 스크립트 로드 순서 (LibRaw 14-bit WASM & 캐시 방지 쿼리스트링 적용) -->
+<script src="js/libraw-wasm.js?v=3.1.0"></script>
+<script src="js/dng-exporter.js?v=3.1.0"></script>
+<script src="js/raw-parser.js?v=3.1.0"></script>
+<script src="js/webgl-engine.js?v=3.1.0"></script>
+<script src="js/scope.js?v=3.1.0"></script>
+<script src="js/color-equalizer.js?v=3.1.0"></script>
+<script src="js/tone-curve.js?v=3.1.0"></script>
+<script src="js/crop-horizon.js?v=3.1.0"></script>
+<script src="js/app.js?v=3.1.0"></script>
 
 </body>
 </html>

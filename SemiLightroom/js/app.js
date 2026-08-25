@@ -875,6 +875,8 @@ class SemiLightroomApp {
           type: parsed.type,
           imageBitmap: parsed.imageBitmap,
           cameraJpegBitmap: parsed.cameraJpegBitmap || parsed.imageBitmap,
+          raw16FloatArray: parsed.raw16FloatArray || null,
+          is16BitRaw: parsed.is16BitRaw || false,
           orientation: initialRotate,
           exif: parsed.exif || {},
           params: photoParams,
@@ -937,12 +939,29 @@ class SemiLightroomApp {
     const photo = this.photos[idx];
     this.currentImageInfo = photo;
 
-    this.engine.setImage(photo.imageBitmap);
+    // 16-bit Float 원본 센서 데이터가 있으면 WebGL 16-bit Float Texture로 직접 주입!
+    this.engine.setImage(photo.imageBitmap, photo.raw16FloatArray);
     this.engine.params = JSON.parse(JSON.stringify(photo.params));
 
     const mp = ((photo.width * photo.height) / 1000000).toFixed(1);
     document.getElementById('status-camera').textContent = photo.exif.Camera || photo.type;
     document.getElementById('status-res').textContent = `${photo.width} × ${photo.height} (${mp} MP)`;
+    
+    const bitEl = document.getElementById('status-bitdepth');
+    if (bitEl) {
+      if (photo.is16BitRaw) {
+        bitEl.textContent = "14/16-bit Float Master (ACEScg)";
+        bitEl.style.background = "#2a3b2a";
+        bitEl.style.color = "#4ade80";
+        bitEl.style.borderColor = "#166534";
+      } else {
+        bitEl.textContent = "8-bit Standard Image (sRGB)";
+        bitEl.style.background = "#1e293b";
+        bitEl.style.color = "#94a3b8";
+        bitEl.style.borderColor = "#334155";
+      }
+    }
+
     document.getElementById('tag-filename').textContent = photo.name;
     document.getElementById('tag-format').textContent = photo.type;
 
@@ -1471,7 +1490,16 @@ class SemiLightroomApp {
     const quality = parseFloat(document.getElementById('export-quality')?.value || 0.95);
     const originalName = this.currentImageInfo ? this.currentImageInfo.name.replace(/\.[^/.]+$/, "") : "photo";
 
-    if (format === 'image/dng') {
+    if (format === 'image/tiff') {
+      const tiffBlob = this.engine.exportTIFF16();
+      if (!tiffBlob) return;
+      const url = URL.createObjectURL(tiffBlob);
+      const link = document.createElement('a');
+      link.download = `${originalName}_master16.tif`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } else if (format === 'image/dng') {
       const dngBlob = this.engine.exportDNG();
       if (!dngBlob) return;
       const url = URL.createObjectURL(dngBlob);
