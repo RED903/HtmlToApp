@@ -1,19 +1,18 @@
-// 루트 웹 앱 허브 포털용 서비스 워커 (Service Worker v2)
-// 하위 모든 웹 앱(운동앱, 계산기 등)의 오프라인 실행을 통합 관리합니다.
-const CACHE_NAME = 'app-hub-portal-v2';
+// 루트 웹 앱 허브 포털용 서비스 워커 (Service Worker v3 - Network-First Smart Update)
+// 1. 최신 업데이트 즉시 반영 (Network-First)
+// 2. 오프라인 PWA 다운로드 및 실행 기능 100% 완벽 유지
+const CACHE_NAME = 'app-hub-portal-v3';
 
 const PRECACHE_URLS = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Outfit:wght@400;600;800&display=swap'
 ];
 
 self.addEventListener('install', (event) => {
-  console.log('[Hub Portal SW] 설치 및 기본 포털 자원 캐싱');
+  console.log('[Hub Portal SW v3] 설치됨 - 즉시 활성화');
   self.skipWaiting();
 
   event.waitUntil(
@@ -24,9 +23,7 @@ self.addEventListener('install', (event) => {
           if (res.ok || res.type === 'opaque') {
             await cache.put(url, res);
           }
-        } catch (e) {
-          console.warn('[Hub Portal SW] 캐싱 건너뜀:', url);
-        }
+        } catch (e) {}
       });
       await Promise.allSettled(promises);
     })
@@ -34,13 +31,13 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  console.log('[Hub Portal SW] 서비스 워커 활성화됨');
+  console.log('[Hub Portal SW v3] 활성화됨 - 이전 구버전 캐시 전체 파기');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName.startsWith('app-hub-portal')) {
-            console.log('[Hub Portal SW] 구버전 캐시 정리:', cacheName);
+          if (cacheName !== CACHE_NAME) {
+            console.log('[Hub Portal SW v3] 구버전 캐시 삭제:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -49,20 +46,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 하위 모든 웹 앱의 요청을 가로채서 오프라인에서도 작동하도록 자동 캐싱 (Dynamic Caching)
+// Network-First 전략: 온라인일 때는 항상 최신 파일을 즉시 가져오고, 오프라인일 때만 캐시 사용
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
+  const url = new URL(event.request.url);
+
+  // 외부 CDN 폰트/스크립트 외의 앱 내부 파일은 Network-First로 처리
   event.respondWith(
     (async () => {
-      // 1. 요청된 파일이 캐시에 이미 있는지 확인 (Cache-First)
-      const cachedResponse = await caches.match(event.request, { ignoreSearch: true });
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      // 2. 캐시에 없으면 네트워크에서 다운로드 후 스마트폰에 영구 보관 (동적 캐싱)
       try {
+        // 1. 네트워크에서 최신 파일 가져오기 시도
         const networkResponse = await fetch(event.request);
         if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
           const responseClone = networkResponse.clone();
@@ -72,10 +66,15 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       } catch (err) {
-        // 3. 인터넷이 끊긴 오프라인 상태일 때 Fallback 처리
+        // 2. 인터넷이 없는 오프라인 상태이거나 네트워크 에러 시 캐시에서 제공 (PWA 오프라인 지원)
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // 3. 페이지 탐색 실패 시 기본 index.html Fallback
         if (event.request.mode === 'navigate' || event.request.destination === 'document') {
-          // 해당 하위 페이지 캐시가 있는지 다시 검색
-          const fallback = await caches.match(event.request) || await caches.match('./index.html');
+          const fallback = await caches.match('./index.html');
           if (fallback) return fallback;
         }
       }

@@ -484,11 +484,12 @@
       console.log('PWA 설치 완료');
     });
 
-    // 루트 서비스 워커 등록
+    // 루트 서비스 워커 등록 (스마트 업데이트 활성화)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then((reg) => {
+        navigator.serviceWorker.register('./sw.js?v=3.0.0').then((reg) => {
           console.log('[Hub Portal] ServiceWorker registered');
+          reg.update();
         }).catch((err) => {
           console.log('[Hub Portal] ServiceWorker registration failed: ', err);
         });
