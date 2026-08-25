@@ -1,21 +1,17 @@
 {
-  "name": "SemiLightroom RAW Editor",
+  "name": "SemiLightroom PRO RAW",
   "short_name": "SemiLightroom",
-  "description": "고성능 RAW 및 고해상도 사진 편집 웹 애플리케이션",
+  "description": "Professional 32-bit Wide Gamut RAW Photo Editor",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#121212",
-  "theme_color": "#1e1e1e",
+  "theme_color": "#1c1c1c",
+  "orientation": "any",
   "icons": [
     {
-      "src": "../icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "../icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23181818'/><polygon points='50,15 15,35 50,55 85,35' fill='none' stroke='%23dca353' stroke-width='6'/><polyline points='15,55 50,75 85,55' fill='none' stroke='%23dca353' stroke-width='6'/><polyline points='15,40 50,60 85,40' fill='none' stroke='%23dca353' stroke-width='6'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
     }
   ]
 }

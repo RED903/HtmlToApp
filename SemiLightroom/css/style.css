@@ -956,3 +956,115 @@ input[type="range"]::-webkit-slider-thumb:hover {
   margin-top: 2px;
 }
 
+/* ========================================================
+   모바일 전용 반응형 UI (Mobile Touch Layout)
+   - 기존 PC 구조를 100% 보존하면서 스마트폰에서 완벽하게 작동
+   ======================================================== */
+@media (max-width: 768px) {
+  /* 1. 상단 헤더: 가로 스크롤 및 콤팩트 패딩 */
+  #top-header {
+    height: 48px;
+    padding: 0 8px;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .brand span, .brand-badge {
+    font-size: 11px;
+  }
+
+  .header-center-tools {
+    gap: 4px;
+  }
+
+  .btn-studio {
+    padding: 4px 8px;
+    font-size: 11px;
+    height: 30px;
+  }
+
+  /* 2. 메인 워크스페이스: 세로 2단 분할 (상단 캔버스 + 하단 편집 패널) */
+  #main-workspace {
+    flex-direction: column;
+    height: calc(100vh - 48px);
+    overflow: hidden;
+  }
+
+  #viewport-container {
+    height: 42vh;
+    min-height: 220px;
+    width: 100%;
+    touch-action: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  /* 3. 사이드바 -> 하단 스크롤 편집 패널로 전환 */
+  #right-sidebar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    height: calc(58vh - 48px);
+    flex: 1;
+    border-left: none;
+  }
+
+  #scope-wrapper {
+    height: 100px;
+  }
+
+  .module-top-tabs {
+    height: 42px;
+    overflow-x: auto;
+    padding: 0 8px;
+  }
+
+  .tab-icon-btn {
+    min-width: 40px;
+    height: 36px;
+  }
+
+  /* 4. 모바일 터치 슬라이더 최적화 */
+  .control-row {
+    padding: 4px 0;
+  }
+
+  input[type="range"] {
+    height: 8px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 5. 모바일 하단 필름스트립 플로팅 */
+  #filmstrip-container {
+    bottom: 0;
+    max-height: 90px;
+  }
+
+  #filmstrip-container.collapsed {
+    height: 24px;
+  }
+
+  .filmstrip-header {
+    padding: 2px 8px;
+  }
+
+  .btn-filmstrip {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+
+  /* 6. 모달 팝업 모바일 크기 맞춤 */
+  .modal-window {
+    width: 92%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+}
+
+

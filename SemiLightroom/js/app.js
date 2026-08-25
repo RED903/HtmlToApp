@@ -725,10 +725,59 @@ class SemiLightroomApp {
 
     vp.addEventListener('dblclick', () => {
       if (this.cropHorizon.cropActive) return;
-      this.engine.params.viewport = { zoom: 1.0, panX: 0, panY: 0 };
+      this.engine.params.viewport.zoom = 1.0, this.engine.params.viewport.panX = 0, this.engine.params.viewport.panY = 0;
       this.updateZoomDisplay();
       this.engine.render();
       this.cropHorizon.draw();
+    });
+
+    // ── 모바일 터치 패닝 & 2손가락 핀치 줌 ──
+    let initialPinchDist = 0;
+    let initialZoom = 1.0;
+
+    vp.addEventListener('touchstart', (e) => {
+      if (this.cropHorizon.cropActive || this.cropHorizon.horizonActive) return;
+      if (e.touches.length === 1) {
+        this.isDragging = true;
+        this.lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        this.isDragging = false;
+        initialPinchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialZoom = this.engine.params.viewport.zoom;
+      }
+    }, { passive: true });
+
+    vp.addEventListener('touchmove', (e) => {
+      if (this.cropHorizon.cropActive || this.cropHorizon.horizonActive) return;
+      if (e.touches.length === 1 && this.isDragging) {
+        const dx = (e.touches[0].clientX - this.lastMousePos.x) / (this.canvas.width / 2);
+        const dy = (e.touches[0].clientY - this.lastMousePos.y) / (this.canvas.height / 2);
+        this.engine.params.viewport.panX += dx;
+        this.engine.params.viewport.panY -= dy;
+        this.lastMousePos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        this.engine.render();
+        this.cropHorizon.draw();
+      } else if (e.touches.length === 2 && initialPinchDist > 0) {
+        const currentDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = currentDist / initialPinchDist;
+        this.engine.params.viewport.zoom = Math.max(0.1, Math.min(10.0, initialZoom * factor));
+        this.updateZoomDisplay();
+        this.engine.render();
+        this.cropHorizon.draw();
+      }
+    }, { passive: true });
+
+    vp.addEventListener('touchend', (e) => {
+      if (e.touches.length === 0) {
+        this.isDragging = false;
+        initialPinchDist = 0;
+      }
     });
   }
 
