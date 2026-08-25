@@ -69,8 +69,7 @@ class ColorEqualizerUI {
       });
     });
 
-    canvas.addEventListener('mousedown', (e) => {
-      const pos = this.getNormPos(e);
+    const handleDown = (pos) => {
       let closest = 0;
       let minDist = 999;
 
@@ -94,76 +93,39 @@ class ColorEqualizerUI {
 
       this.syncToEngine();
       this.render();
-    });
+    };
 
-    window.addEventListener('mousemove', (e) => {
+    const handleMove = (pos) => {
       if (!this.isDragging || this.activeNodeIndex === -1) return;
-      const pos = this.getNormPos(e);
       this.nodes[this.channel][this.activeNodeIndex] = Math.max(-1.0, Math.min(1.0, pos.y));
       this.syncToEngine();
       this.render();
-    });
+    };
 
-    // ── 모바일 터치 이벤트 지원 ──
-    const handleTouchStart = (e) => {
+    const handleUp = () => {
+      this.isDragging = false;
+      this.activeNodeIndex = -1;
+    };
+
+    // 마우스 이벤트
+    canvas.addEventListener('mousedown', (e) => handleDown(this.getNormPos(e)));
+    window.addEventListener('mousemove', (e) => handleMove(this.getNormPos(e)));
+    window.addEventListener('mouseup', handleUp);
+
+    // 모바일 터치 이벤트
+    canvas.addEventListener('touchstart', (e) => {
       if (e.touches.length > 0) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        const rawX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
-        const rawY = 1.0 - ((touch.clientY - rect.top) / rect.height);
-        const pos = { x: rawX, y: (rawY - 0.5) * 2.0 };
-
-        let closest = 0;
-        let minDist = 999;
-        for (let i = 0; i < 8; i++) {
-          const d = Math.abs(pos.x - this.centers[i]);
-          if (d < minDist) {
-            minDist = d;
-            closest = i;
-          }
-        }
-
-        this.activeNodeIndex = closest;
-        this.isDragging = true;
-        this.nodes[this.channel][closest] = Math.max(-1.0, Math.min(1.0, pos.y));
-
-        if (this.engine && this.engine.params.colorEqualizer) {
-          this.engine.params.colorEqualizer.enabled = true;
-          document.querySelector('.module-power-btn[data-module="colorEqualizer"]')?.classList.add('active');
-        }
-
-        this.syncToEngine();
-        this.render();
+        handleDown(this.getTouchNormPos(e.touches[0]));
       }
-    };
+    }, { passive: true });
 
-    const handleTouchMove = (e) => {
-      if (!this.isDragging || this.activeNodeIndex === -1 || e.touches.length === 0) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const rawY = 1.0 - ((touch.clientY - rect.top) / rect.height);
-      const pos = { y: (rawY - 0.5) * 2.0 };
+    window.addEventListener('touchmove', (e) => {
+      if (this.isDragging && e.touches.length > 0) {
+        handleMove(this.getTouchNormPos(e.touches[0]));
+      }
+    }, { passive: true });
 
-      this.nodes[this.channel][this.activeNodeIndex] = Math.max(-1.0, Math.min(1.0, pos.y));
-      this.syncToEngine();
-      this.render();
-    };
-
-    const handleTouchEnd = () => {
-      this.isDragging = false;
-      this.activeNodeIndex = -1;
-    };
-
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd);
-
-    window.addEventListener('mouseup', () => {
-      this.isDragging = false;
-      this.activeNodeIndex = -1;
-    });
+    window.addEventListener('touchend', handleUp);
 
     canvas.addEventListener('dblclick', (e) => {
       const pos = this.getNormPos(e);
@@ -176,6 +138,14 @@ class ColorEqualizerUI {
         }
       }
     });
+  }
+
+  getTouchNormPos(touch) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+    const rawY = 1.0 - ((touch.clientY - rect.top) / rect.height);
+    const y = (rawY - 0.5) * 2.0;
+    return { x, y };
   }
 
   getNormPos(e) {

@@ -178,6 +178,23 @@ class SemiLightroomApp {
   }
 
   setupEventListeners() {
+    // 스코프 모니터 열고 닫기 토글 (모바일 기본 닫힘 지원)
+    const btnToggleScope = document.getElementById('btn-toggle-scope');
+    const scopeWrapper = document.getElementById('scope-wrapper');
+    const scopeArrow = document.getElementById('scope-toggle-arrow');
+
+    btnToggleScope?.addEventListener('click', () => {
+      scopeWrapper.classList.toggle('open');
+      const isOpen = scopeWrapper.classList.contains('open');
+      if (scopeArrow) scopeArrow.textContent = isOpen ? '▲' : '▼';
+      if (isOpen) {
+        setTimeout(() => {
+          this.scope.resize();
+          this.scope.update();
+        }, 50);
+      }
+    });
+
     document.getElementById('btn-open')?.addEventListener('click', () => {
       document.getElementById('file-input').click();
     });
@@ -252,23 +269,6 @@ class SemiLightroomApp {
         btn.classList.add('active');
         this.filterModulesByTab(btn.getAttribute('data-tab'));
       });
-    });
-
-    // 스코프 모니터 열기/닫기 토글
-    const scopeToggle = document.getElementById('scope-toggle-bar');
-    const scopeWrapper = document.getElementById('scope-wrapper');
-    const scopeIcon = document.getElementById('scope-toggle-icon');
-
-    scopeToggle?.addEventListener('click', () => {
-      scopeWrapper.classList.toggle('expanded');
-      const isExpanded = scopeWrapper.classList.contains('expanded');
-      if (scopeIcon) scopeIcon.textContent = isExpanded ? '▼' : '▲';
-      if (isExpanded) {
-        setTimeout(() => {
-          this.scope.resize();
-          this.scope.update();
-        }, 50);
-      }
     });
 
     document.querySelectorAll('.scope-tab-btn').forEach(btn => {

@@ -86,13 +86,14 @@ class ToneCurveUI {
       this.reset();
     });
 
-    canvas.addEventListener('mousedown', (e) => {
-      const pos = this.getNormPos(e);
+    const handleDown = (pos) => {
       const pts = this.curves[this.channel];
+      const isMobile = ('ontouchstart' in window || window.innerWidth <= 768);
+      const threshold = isMobile ? 0.12 : 0.06;
 
       let hit = -1;
       for (let i = 0; i < pts.length; i++) {
-        if (Math.hypot(pts[i].x - pos.x, pts[i].y - pos.y) < 0.06) {
+        if (Math.hypot(pts[i].x - pos.x, pts[i].y - pos.y) < threshold) {
           hit = i;
           break;
         }
@@ -113,11 +114,10 @@ class ToneCurveUI {
       }
       this.syncToEngine();
       this.render();
-    });
+    };
 
-    window.addEventListener('mousemove', (e) => {
+    const handleMove = (pos) => {
       if (!this.isDragging || this.activePointIndex === -1) return;
-      const pos = this.getNormPos(e);
       const pts = this.curves[this.channel];
 
       if (this.activePointIndex === 0) {
@@ -132,84 +132,32 @@ class ToneCurveUI {
 
       this.syncToEngine();
       this.render();
-    });
+    };
 
-    // ── 모바일 터치 지원 ──
-    const handleTouchStart = (e) => {
+    const handleUp = () => {
+      this.isDragging = false;
+      this.activePointIndex = -1;
+    };
+
+    // 마우스 이벤트
+    canvas.addEventListener('mousedown', (e) => handleDown(this.getNormPos(e)));
+    window.addEventListener('mousemove', (e) => handleMove(this.getNormPos(e)));
+    window.addEventListener('mouseup', handleUp);
+
+    // 모바일 터치 이벤트
+    canvas.addEventListener('touchstart', (e) => {
       if (e.touches.length > 0) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        const pos = {
-          x: Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width)),
-          y: Math.max(0, Math.min(1, 1.0 - (touch.clientY - rect.top) / rect.height))
-        };
-        const pts = this.curves[this.channel];
-
-        let hit = -1;
-        for (let i = 0; i < pts.length; i++) {
-          if (Math.hypot(pts[i].x - pos.x, pts[i].y - pos.y) < 0.14) {
-            hit = i;
-            break;
-          }
-        }
-
-        if (hit !== -1) {
-          this.activePointIndex = hit;
-        } else {
-          pts.push(pos);
-          pts.sort((a, b) => a.x - b.x);
-          this.activePointIndex = pts.indexOf(pos);
-        }
-
-        this.isDragging = true;
-        if (this.engine && this.engine.params.toneCurve) {
-          this.engine.params.toneCurve.enabled = true;
-          document.querySelector('.module-power-btn[data-module="toneCurve"]')?.classList.add('active');
-        }
-        this.syncToEngine();
-        this.render();
+        handleDown(this.getTouchNormPos(e.touches[0]));
       }
-    };
+    }, { passive: true });
 
-    const handleTouchMove = (e) => {
-      if (!this.isDragging || this.activePointIndex === -1 || e.touches.length === 0) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const pos = {
-        x: Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width)),
-        y: Math.max(0, Math.min(1, 1.0 - (touch.clientY - rect.top) / rect.height))
-      };
-      const pts = this.curves[this.channel];
-
-      if (this.activePointIndex === 0) {
-        pts[0].y = pos.y;
-      } else if (this.activePointIndex === pts.length - 1) {
-        pts[pts.length - 1].y = pos.y;
-      } else {
-        pts[this.activePointIndex] = pos;
-        pts.sort((a, b) => a.x - b.x);
-        this.activePointIndex = pts.indexOf(pos);
+    window.addEventListener('touchmove', (e) => {
+      if (this.isDragging && e.touches.length > 0) {
+        handleMove(this.getTouchNormPos(e.touches[0]));
       }
+    }, { passive: true });
 
-      this.syncToEngine();
-      this.render();
-    };
-
-    const handleTouchEnd = () => {
-      this.isDragging = false;
-      this.activePointIndex = -1;
-    };
-
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd);
-
-    window.addEventListener('mouseup', () => {
-      this.isDragging = false;
-      this.activePointIndex = -1;
-    });
+    window.addEventListener('touchend', handleUp);
 
     canvas.addEventListener('dblclick', (e) => {
       const pos = this.getNormPos(e);
@@ -223,6 +171,13 @@ class ToneCurveUI {
         }
       }
     });
+  }
+
+  getTouchNormPos(touch) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, 1.0 - (touch.clientY - rect.top) / rect.height));
+    return { x, y };
   }
 
   getNormPos(e) {

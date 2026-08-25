@@ -956,24 +956,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
   margin-top: 2px;
 }
 
-/* 스코프 토글 바 */
-#scope-toggle-bar {
+/* 스코프 모니터 토글 헤더 */
+.scope-header-toggle {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 4px 10px;
+  align-items: center;
+  padding: 6px 12px;
   background: #181818;
   border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
   font-size: 11px;
-  color: var(--text-muted);
   font-weight: 600;
-  transition: all 0.15s;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
 }
 
-#scope-toggle-bar:hover {
-  background: #252525;
+.scope-header-toggle:hover {
   color: #fff;
+  background: #222;
 }
 
 /* ========================================================
@@ -1031,13 +1031,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border-left: none;
   }
 
-  /* 모바일에서 스코프 모니터는 기본 닫힌 상태 */
+  /* 4. 스코프 모니터: 모바일 기본은 닫혀있고 토글 시에만 표시 */
   #scope-wrapper {
     display: none;
-    height: 120px;
+    height: 110px;
   }
 
-  #scope-wrapper.expanded {
+  #scope-wrapper.open {
     display: block;
   }
 
@@ -1052,7 +1052,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 38px;
   }
 
-  /* 4. 모바일 터치 슬라이더 & 그래프 조작 버튼 대폭 확대 */
+  /* 5. 모바일 터치 슬라이더 최적화 */
   .control-row {
     padding: 6px 0;
   }
@@ -1066,25 +1066,40 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 24px;
   }
 
-  /* 톤 커브 및 컬러 이퀄라이저 조작 버튼 터치 최적화 */
+  /* 6. 그래프 조작 영역 & 버튼 시원하게 확대 (터치 최적화) */
   .tc-channel-btn {
-    height: 38px;
-    font-size: 13px;
+    height: 38px !important;
+    font-size: 13px !important;
     font-weight: 600;
+  }
+
+  #tc-canvas {
+    touch-action: none;
+  }
+
+  .module-body div[style*="height:160px"],
+  .module-body div[style*="height: 160px"] {
+    height: 190px !important;
   }
 
   .ceq-subtab {
-    padding: 10px 0;
-    font-size: 13px;
+    padding: 8px 0 !important;
+    font-size: 12px !important;
     font-weight: 600;
   }
 
-  .btn-crop-aspect {
-    padding: 8px 12px;
-    font-size: 12px;
+  .ceq-canvas-wrapper {
+    height: 180px !important;
+    touch-action: none;
   }
 
-  /* 5. 모바일 하단 필름스트립 플로팅 */
+  .btn-crop-aspect {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    height: 34px !important;
+  }
+
+  /* 7. 모바일 하단 필름스트립 플로팅 */
   #filmstrip-container {
     bottom: 0;
     max-height: 90px;
@@ -1095,7 +1110,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 
   .filmstrip-header {
-    padding: 3px 8px;
+    padding: 4px 8px;
   }
 
   .btn-filmstrip {
@@ -1104,13 +1119,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
     height: 28px;
   }
 
-  /* 6. 모달 팝업 모바일 크기 맞춤 */
+  /* 8. 모달 팝업 모바일 크기 맞춤 */
   .modal-window {
-    width: 94%;
+    width: 92%;
     max-height: 85vh;
     overflow-y: auto;
   }
 }
-
 
 
