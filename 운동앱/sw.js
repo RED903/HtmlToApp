@@ -1,5 +1,5 @@
-// 운동앱 전용 서비스 워커 (Service Worker v4)
-const CACHE_NAME = 'workout-timer-v4';
+// 운동앱 전용 서비스 워커 (Service Worker v5)
+const CACHE_NAME = 'workout-timer-v5';
 
 // 오프라인 구동을 위해 반드시 저장할 파일 목록
 const PRECACHE_ASSETS = [
@@ -105,9 +105,15 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkRes;
-      }).catch((e) => {
-        console.warn('[SW v4] 오프라인 리소스 없음:', event.request.url);
-      });
+// 4. 시스템 알림 클릭 이벤트 처리
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow('./');
     })
   );
 });

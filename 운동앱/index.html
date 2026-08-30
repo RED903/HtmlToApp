@@ -26,10 +26,31 @@
       -webkit-user-select: none;
       user-select: none;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      touch-action: manipulation;
     }
     .animate-fade-in { animation: fadeIn 0.25s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
     
+    @keyframes alarmPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 25px rgba(239, 68, 68, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 45px rgba(239, 68, 68, 0.85); }
+    }
+    .animate-alarm-pulse {
+      animation: alarmPulse 0.9s infinite ease-in-out;
+    }
+
+    @keyframes bellRing {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(15deg); }
+      40% { transform: rotate(-15deg); }
+      60% { transform: rotate(10deg); }
+      80% { transform: rotate(-10deg); }
+    }
+    .animate-bell-ring {
+      animation: bellRing 0.7s infinite ease-in-out;
+      transform-origin: top center;
+    }
+
     /* 커스텀 스크롤바 */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
@@ -41,7 +62,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo } = React;
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // --- 아이콘 컴포넌트 ---
     const Play = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>;
@@ -59,6 +80,11 @@
     const X = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
     const ArrowUp = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>;
     const ArrowDown = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>;
+    const Bell = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>;
+    const BellOff = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"></path><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>;
+    const Volume2 = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>;
+    const Zap = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;
+    const Smartphone = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect><path d="M12 18h.01"></path></svg>;
 
     // --- 기본 초기값 설정 ---
     const DEFAULT_REST_TIME = 120;
@@ -71,10 +97,17 @@
       { id: '6', name: '사레레', weight: '7.5kg 양손', reps: '12회', sets: 3, query: '사이드+레터럴+레이즈+자세' },
     ];
 
+    const SOUND_OPTIONS = [
+      { id: 'digital_timer', name: '디지털 타이머 비프 (권장)', desc: '또렷한 4연속 고주파 비프 경보음' },
+      { id: 'crystal_bell', name: '크리스탈 차임벨', desc: '맑고 청아한 화음 벨소리' },
+      { id: 'power_buzzer', name: '파워 스포츠 버저', desc: '체육관 스타일의 강력한 카운트 버저' }
+    ];
+
     const STORAGE_KEY_ROUTINE = 'workout_routine_custom_v2';
     const STORAGE_KEY_REST_TIME = 'workout_rest_time_custom_v2';
+    const STORAGE_KEY_SOUND_TYPE = 'workout_sound_type_v2';
 
-    // 로컬 스토리지 불러오기 헬퍼
+    // 로컬 스토리지 불러오기
     function loadSavedRoutine() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY_ROUTINE);
@@ -101,23 +134,45 @@
       return DEFAULT_REST_TIME;
     }
 
+    function loadSavedSoundType() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_SOUND_TYPE);
+        if (saved && SOUND_OPTIONS.some(opt => opt.id === saved)) return saved;
+      } catch (e) {}
+      return 'digital_timer';
+    }
+
     function App() {
       // --- 커스텀 데이터 상태 관리 ---
       const [routine, setRoutine] = useState(loadSavedRoutine);
       const [restTime, setRestTime] = useState(loadSavedRestTime);
+      const [soundType, setSoundType] = useState(loadSavedSoundType);
       const [isSettingOpen, setIsSettingOpen] = useState(false);
+      const [notifPermission, setNotifPermission] = useState(() => {
+        return typeof Notification !== 'undefined' ? Notification.permission : 'unsupported';
+      });
 
-      // --- 타이머 실행 상태 ---
+      // --- 타이머 및 알람 실행 상태 ---
       const [stepIndex, setStepIndex] = useState(-1);
       const [time, setTime] = useState(0);
       const [isRunning, setIsRunning] = useState(false);
+      
+      // 알람 울림 및 휴식 종료 대기 상태
+      const [isAlarmActive, setIsAlarmActive] = useState(false);
+      const [isRestCompletedWaiting, setIsRestCompletedWaiting] = useState(false);
+
+      // 화면 켜짐 유지 상태
       const [wakeLockActive, setWakeLockActive] = useState(false);
+      
       const audioCtxRef = useRef(null);
       const wakeLockRef = useRef(null);
+      const alarmTimerRef = useRef(null);
+      const videoKeepAliveRef = useRef(null);
 
       // 설정 임시 편집 상태 (모달용)
       const [tempRoutine, setTempRoutine] = useState(routine);
       const [tempRestTime, setTempRestTime] = useState(restTime);
+      const [tempSoundType, setTempSoundType] = useState(soundType);
 
       // 루틴 변경 시 steps 동적 계산
       const steps = useMemo(() => {
@@ -156,115 +211,317 @@
         return result;
       }, [routine]);
 
-      // 화면 켜짐 방지 (Wake Lock)
-      const requestWakeLock = async () => {
+      // 시스템 알림 권한 요청
+      const requestNotificationPermission = async () => {
+        if (typeof Notification === 'undefined') {
+          alert('이 브라우저는 시스템 알림을 지원하지 않습니다.');
+          return;
+        }
         try {
-          if ('wakeLock' in navigator) {
-            wakeLockRef.current = await navigator.wakeLock.request('screen');
-            setWakeLockActive(true);
+          const perm = await Notification.requestPermission();
+          setNotifPermission(perm);
+          if (perm === 'granted') {
+            triggerSystemNotification('🔔 알림 설정 완료!', '휴식이 끝나면 시스템 알림음과 진동으로 알려드립니다.');
           }
-        } catch (err) {
-          console.warn('Wake Lock 요청 실패:', err);
-          setWakeLockActive(false);
+        } catch (e) {
+          console.warn('알림 권한 요청 실패:', e);
         }
       };
 
-      const releaseWakeLock = () => {
+      // 시스템 알림(스마트폰 알림 음량 스트림) 발송
+      const triggerSystemNotification = useCallback((title, body) => {
+        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+
+        // ServiceWorker를 통한 OS 시스템 알림 발송 (알림 음량 채널 사용)
+        if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification(title, {
+              body: body,
+              icon: './icon-192.png',
+              badge: './icon-192.png',
+              vibrate: [300, 100, 300, 100, 400],
+              tag: 'workout-alarm-tag',
+              renotify: true,
+              requireInteraction: true,
+              silent: false
+            }).catch(() => {});
+          });
+        } else {
+          try {
+            new Notification(title, {
+              body: body,
+              icon: './icon-192.png',
+              vibrate: [300, 100, 300, 100, 400],
+              tag: 'workout-alarm-tag',
+              silent: false
+            });
+          } catch(e) {}
+        }
+      }, []);
+
+      // 열려있는 시스템 알림 닫기
+      const closeSystemNotifications = useCallback(() => {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.getNotifications({ tag: 'workout-alarm-tag' }).then((notifications) => {
+              notifications.forEach((n) => n.close());
+            }).catch(() => {});
+          });
+        }
+      }, []);
+
+      // --- 화면 꺼짐 방지 (Wake Lock + Video Fallback) ---
+      const requestWakeLock = useCallback(async () => {
+        try {
+          if ('wakeLock' in navigator) {
+            if (wakeLockRef.current !== null) {
+              try { await wakeLockRef.current.release(); } catch(e){}
+            }
+            wakeLockRef.current = await navigator.wakeLock.request('screen');
+            setWakeLockActive(true);
+            wakeLockRef.current.addEventListener('release', () => {
+              setWakeLockActive(false);
+            });
+          }
+        } catch (err) {
+          console.warn('Wake Lock 미지원 또는 오류:', err);
+          setWakeLockActive(false);
+        }
+
+        // iOS 및 미지원 환경용 백업 Fallback 비디오
+        try {
+          if (!videoKeepAliveRef.current) {
+            const video = document.createElement('video');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('muted', '');
+            video.muted = true;
+            video.loop = true;
+            video.src = 'data:video/mp4;base64,AAAAHGZ0eXBtcDQyAAAAAG1wNDJpc29tYXZjMQAAAAhmcmVlAAAAEG1kYXQAAAEA//+A';
+            video.style.position = 'fixed';
+            video.style.width = '1px';
+            video.style.height = '1px';
+            video.style.opacity = '0.01';
+            video.style.pointerEvents = 'none';
+            document.body.appendChild(video);
+            videoKeepAliveRef.current = video;
+          }
+          if (videoKeepAliveRef.current && videoKeepAliveRef.current.paused) {
+            videoKeepAliveRef.current.play().catch(() => {});
+          }
+        } catch(e) {}
+      }, []);
+
+      const releaseWakeLock = useCallback(() => {
         if (wakeLockRef.current !== null) {
           wakeLockRef.current.release().catch(() => {});
           wakeLockRef.current = null;
-          setWakeLockActive(false);
         }
-      };
+        if (videoKeepAliveRef.current) {
+          try {
+            videoKeepAliveRef.current.pause();
+          } catch(e){}
+        }
+        setWakeLockActive(false);
+      }, []);
 
+      // 화면 복귀 및 사용자 인터랙션 시 Wake Lock 자동 복원
       useEffect(() => {
         const handleVisibilityChange = async () => {
           if (document.visibilityState === 'visible' && stepIndex >= 0 && stepIndex < steps.length) {
             await requestWakeLock();
           }
         };
+        const handleUserTouch = async () => {
+          if (stepIndex >= 0 && stepIndex < steps.length && !wakeLockActive) {
+            await requestWakeLock();
+          }
+        };
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('touchstart', handleUserTouch, { passive: true });
+        window.addEventListener('click', handleUserTouch, { passive: true });
+
         return () => {
           document.removeEventListener('visibilitychange', handleVisibilityChange);
+          window.removeEventListener('touchstart', handleUserTouch);
+          window.removeEventListener('click', handleUserTouch);
           releaseWakeLock();
         };
-      }, [stepIndex, steps.length]);
+      }, [stepIndex, steps.length, wakeLockActive, requestWakeLock, releaseWakeLock]);
 
-      // 사운드 효과
-      const initAudio = () => {
-        if (!audioCtxRef.current) {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          audioCtxRef.current = ctx;
-          if (ctx.state === 'suspended') {
-            ctx.resume();
+      // --- 오디오 엔진 (Web Audio API 고품질 알람 사운드 합성) ---
+      const initAudio = useCallback(() => {
+        try {
+          if (!audioCtxRef.current) {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtxRef.current = ctx;
           }
-          const osc = ctx.createOscillator();
-          osc.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.001);
+          if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+          }
+        } catch(e) {
+          console.warn('오디오 초기화 오류:', e);
         }
-      };
+      }, []);
 
-      const playTtododongX3 = () => {
+      // 알람 소리 생성기
+      const playSingleAlarmBeep = useCallback((typeToPlay = soundType) => {
+        initAudio();
         if (!audioCtxRef.current) return;
         const ctx = audioCtxRef.current;
         if (ctx.state === 'suspended') {
           ctx.resume();
         }
 
-        const notes = [523.25, 659.25, 784.00];
-        let startTime = ctx.currentTime + 0.05;
+        const now = ctx.currentTime;
 
-        for (let rep = 0; rep < 3; rep++) {
-          notes.forEach((freq, idx) => {
+        // 1. 디지털 타이머 비프 (삐-삐-삐-삐! 고주파 듀얼 펄스 경보음)
+        if (typeToPlay === 'digital_timer') {
+          const beeps = [0, 0.12, 0.24, 0.36];
+          beeps.forEach((delay) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
 
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, startTime);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(2800, now + delay);
 
-            gain.gain.setValueAtTime(0.3, startTime);
-            const noteDuration = idx === 2 ? 0.16 : 0.08;
-            gain.gain.exponentialRampToValueAtTime(0.0001, startTime + noteDuration);
+            gain.gain.setValueAtTime(0.35, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.08);
 
             osc.connect(gain);
             gain.connect(ctx.destination);
 
-            osc.start(startTime);
-            osc.stop(startTime + noteDuration);
-
-            startTime += noteDuration + 0.02;
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.085);
           });
-          startTime += 0.22;
         }
-      };
+        // 2. 크리스탈 차임벨 (딩-동! 맑고 울림 있는 종소리)
+        else if (typeToPlay === 'crystal_bell') {
+          const chords = [
+            { freq: 880, delay: 0, dur: 0.8 },
+            { freq: 1760, delay: 0, dur: 0.5 },
+            { freq: 1174.66, delay: 0.18, dur: 0.9 },
+            { freq: 2349.32, delay: 0.18, dur: 0.6 }
+          ];
+          chords.forEach(({ freq, delay, dur }) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
 
-      // 1초 단위 타이머
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + delay);
+
+            gain.gain.setValueAtTime(0.4, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + dur);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now + delay);
+            osc.stop(now + delay + dur);
+          });
+        }
+        // 3. 파워 스포츠 버저 (낮고 강렬한 체육관 카운트 버저)
+        else if (typeToPlay === 'power_buzzer') {
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc1.type = 'sawtooth';
+          osc2.type = 'square';
+          osc1.frequency.setValueAtTime(600, now);
+          osc2.frequency.setValueAtTime(605, now);
+
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 0.6);
+          osc2.stop(now + 0.6);
+        }
+
+        // 모바일 기기 진동
+        if ('vibrate' in navigator) {
+          try {
+            navigator.vibrate([250, 100, 250, 100, 300]);
+          } catch(e){}
+        }
+      }, [soundType, initAudio]);
+
+      // 지속 알람 시작 (사용자가 끌 때까지 반복 울림)
+      const startContinuousAlarm = useCallback(() => {
+        setIsAlarmActive(true);
+        setIsRestCompletedWaiting(true);
+        
+        // 1) 시스템 알림 발송 (스마트폰 알림 음량 채널)
+        const nextStepInfo = stepIndex + 1 < steps.length ? steps[stepIndex + 1] : null;
+        const msg = nextStepInfo 
+          ? `다음: ${nextStepInfo.name} (${nextStepInfo.set}세트)` 
+          : '휴식이 완료되었습니다. 운동을 시작하세요!';
+        triggerSystemNotification('🔔 휴식 시간 종료!', msg);
+
+        // 2) 브라우저 포그라운드 사운드 재생
+        playSingleAlarmBeep();
+
+        if (alarmTimerRef.current) clearInterval(alarmTimerRef.current);
+        let count = 0;
+        alarmTimerRef.current = setInterval(() => {
+          count++;
+          if (count > 60) {
+            stopAlarm();
+            return;
+          }
+          playSingleAlarmBeep();
+        }, 1100);
+      }, [stepIndex, steps, playSingleAlarmBeep, triggerSystemNotification]);
+
+      // 알람 끄기 (소리와 시스템 알림만 멈추고 운동 시작 대기 유지)
+      const stopAlarm = useCallback(() => {
+        if (alarmTimerRef.current) {
+          clearInterval(alarmTimerRef.current);
+          alarmTimerRef.current = null;
+        }
+        setIsAlarmActive(false);
+        closeSystemNotifications();
+      }, [closeSystemNotifications]);
+
+      // 휴식 타이머 카운트다운
       useEffect(() => {
         let interval = null;
         const currentStep = steps[stepIndex];
         
         if (isRunning && currentStep?.type === 'rest') {
           interval = setInterval(() => {
-            setTime((prevTime) => prevTime - 1);
+            setTime((prevTime) => {
+              if (prevTime <= 1) {
+                clearInterval(interval);
+                setIsRunning(false);
+                startContinuousAlarm();
+                return 0;
+              }
+              return prevTime - 1;
+            });
           }, 1000);
         }
         return () => clearInterval(interval);
-      }, [isRunning, stepIndex, steps]);
+      }, [isRunning, stepIndex, steps, startContinuousAlarm]);
 
-      // 휴식 완료 시 소리 재생 & 다음 운동으로 자동 이동
-      useEffect(() => {
-        const currentStep = steps[stepIndex];
-        if (currentStep?.type === 'rest' && time <= 0 && isRunning) {
-          playTtododongX3();
-          handleNextStep();
-        }
-      }, [time, isRunning, stepIndex, steps]);
-
+      // 다음 단계로 이동
       const handleNextStep = async () => {
+        stopAlarm();
+        setIsRestCompletedWaiting(false);
+
         if (stepIndex === -1) {
           initAudio();
           await requestWakeLock();
+          // 첫 시작 시 알림 권한이 default면 물어보기
+          if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+            requestNotificationPermission();
+          }
         }
         
         if (stepIndex >= steps.length - 1) {
@@ -286,7 +543,16 @@
         }
       };
 
+      // 알람 끄고 바로 다음 운동 시작
+      const handleStopAlarmAndStart = async () => {
+        stopAlarm();
+        await handleNextStep();
+      };
+
       const handlePrevStep = () => {
+        stopAlarm();
+        setIsRestCompletedWaiting(false);
+
         if (stepIndex <= 0) {
           setStepIndex(-1);
           setTime(0);
@@ -309,12 +575,14 @@
 
       const toggleTimer = () => {
         const currentStep = steps[stepIndex];
-        if (currentStep?.type === 'rest') {
+        if (currentStep?.type === 'rest' && !isAlarmActive && !isRestCompletedWaiting) {
           setIsRunning(!isRunning);
         }
       };
 
       const resetWorkout = () => {
+        stopAlarm();
+        setIsRestCompletedWaiting(false);
         setStepIndex(-1);
         setTime(0);
         setIsRunning(false);
@@ -331,6 +599,7 @@
       const openSettings = () => {
         setTempRoutine(JSON.parse(JSON.stringify(routine)));
         setTempRestTime(restTime);
+        setTempSoundType(soundType);
         setIsSettingOpen(true);
       };
 
@@ -345,27 +614,28 @@
 
         setRoutine(validRoutine);
         setRestTime(validTime);
+        setSoundType(tempSoundType);
 
-        // 브라우저 localStorage에 영구 저장
         try {
           localStorage.setItem(STORAGE_KEY_ROUTINE, JSON.stringify(validRoutine));
           localStorage.setItem(STORAGE_KEY_REST_TIME, validTime.toString());
+          localStorage.setItem(STORAGE_KEY_SOUND_TYPE, tempSoundType);
         } catch (e) {
           console.error('설정 저장 실패:', e);
         }
 
         setIsSettingOpen(false);
-        resetWorkout(); // 루틴이 바뀌었으므로 초기화
+        resetWorkout();
       };
 
       const resetToDefault = () => {
-        if (window.confirm('기본 운동 루틴과 휴식 시간(120초)으로 초기화하시겠습니까?')) {
+        if (window.confirm('기본 운동 루틴, 휴식 시간(120초), 알람음으로 초기화하시겠습니까?')) {
           setTempRoutine(JSON.parse(JSON.stringify(DEFAULT_ROUTINE)));
           setTempRestTime(DEFAULT_REST_TIME);
+          setTempSoundType('digital_timer');
         }
       };
 
-      // 운동 항목 추가/삭제/이동 핸들러
       const handleAddExercise = () => {
         const newId = Date.now().toString();
         setTempRoutine([...tempRoutine, {
@@ -399,7 +669,6 @@
       const handleExerciseChange = (idx, field, value) => {
         const copy = [...tempRoutine];
         copy[idx][field] = value;
-        // 이름 변경 시 query도 기본 업데이트
         if (field === 'name' && (!copy[idx].query || copy[idx].query.endsWith('+자세'))) {
           copy[idx].query = value + '+자세';
         }
@@ -407,19 +676,29 @@
       };
 
       const currentStep = steps[stepIndex];
+      const nextStep = stepIndex + 1 < steps.length ? steps[stepIndex + 1] : null;
       const isFinished = stepIndex >= steps.length;
       const isIdle = stepIndex === -1;
 
+      // 동적 배경 테마
       let bgTheme = "bg-slate-900 border-slate-800";
-      if (currentStep?.type === 'workout') bgTheme = "bg-slate-900 border-indigo-500/30";
-      if (currentStep?.type === 'rest') bgTheme = "bg-emerald-950 border-emerald-500/40";
-      if (isFinished) bgTheme = "bg-blue-950 border-blue-500/40";
+      if (isAlarmActive) {
+        bgTheme = "bg-red-950/90 border-red-500/80 shadow-[0_0_35px_rgba(239,68,68,0.4)]";
+      } else if (isRestCompletedWaiting) {
+        bgTheme = "bg-amber-950/80 border-amber-500/60 shadow-[0_0_25px_rgba(245,158,11,0.3)]";
+      } else if (currentStep?.type === 'workout') {
+        bgTheme = "bg-slate-900 border-indigo-500/30";
+      } else if (currentStep?.type === 'rest') {
+        bgTheme = "bg-emerald-950 border-emerald-500/40";
+      } else if (isFinished) {
+        bgTheme = "bg-blue-950 border-blue-500/40";
+      }
 
       return (
         <div className="min-h-screen w-full bg-slate-950 flex items-center justify-center p-2 sm:p-4 font-sans select-none relative overflow-x-hidden">
           
           {/* 메인 타이머 카드 박스 */}
-          <div className={`w-full max-w-[440px] aspect-square ${bgTheme} border-2 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-2xl p-3 sm:p-5 relative transition-colors duration-500 overflow-hidden`}>
+          <div className={`w-full max-w-[440px] aspect-square ${bgTheme} border-2 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-2xl p-3 sm:p-5 relative transition-all duration-300 overflow-hidden`}>
             
             {/* 상단 헤더 */}
             <div className="flex items-center justify-between text-xs text-gray-400 border-b border-white/10 pb-1.5 shrink-0">
@@ -438,24 +717,50 @@
               </div>
 
               <div className="flex items-center gap-1.5">
-                {wakeLockActive && (
-                  <span className="flex items-center gap-1 text-emerald-400 text-[10px] sm:text-xs bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    <Sun className="w-3 h-3 animate-spin" /> 화면 켜짐
-                  </span>
+                {/* 시스템 알림 권한 상태 및 요청 */}
+                {notifPermission !== 'granted' && (
+                  <button
+                    onClick={requestNotificationPermission}
+                    title="스마트폰 시스템 알림음(알림 볼륨) 허용하기"
+                    className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all animate-pulse"
+                  >
+                    <Smartphone className="w-3 h-3" />
+                    <span>알림음 허용</span>
+                  </button>
                 )}
+
+                {/* 화면 켜짐 유지 토글 버튼 */}
+                <button
+                  onClick={wakeLockActive ? releaseWakeLock : requestWakeLock}
+                  title="화면 꺼짐 방지 (클릭하여 켜기/끄기)"
+                  className={`flex items-center gap-1 text-[10px] sm:text-xs px-2 py-0.5 rounded-full border transition-all ${
+                    wakeLockActive 
+                      ? 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' 
+                      : 'text-gray-400 bg-slate-800 border-slate-700 hover:text-gray-200'
+                  }`}
+                >
+                  <Sun className={`w-3 h-3 ${wakeLockActive ? 'animate-spin text-emerald-400' : ''}`} />
+                  <span>{wakeLockActive ? '화면켜짐' : '화면유지OFF'}</span>
+                </button>
+
                 {!isIdle && !isFinished && (
                   <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold ${
-                    currentStep.type === 'workout' 
+                    isAlarmActive
+                      ? 'bg-red-500/30 text-red-300 border border-red-500/50 animate-pulse'
+                      : isRestCompletedWaiting
+                      ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50'
+                      : currentStep.type === 'workout' 
                       ? 'bg-indigo-500/20 text-indigo-300' 
                       : 'bg-emerald-500/20 text-emerald-300'
                   }`}>
                     {currentStep.exerciseIndex} / {routine.length}
                   </span>
                 )}
+
                 {/* 루틴 커스텀 설정 버튼 */}
                 <button
                   onClick={openSettings}
-                  title="루틴 및 휴식시간 수정"
+                  title="루틴 및 알람 소리 수정"
                   className="p-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80 transition-all active:scale-95 flex items-center gap-1 text-[10px]"
                 >
                   <Settings className="w-3.5 h-3.5 text-indigo-400" />
@@ -473,7 +778,7 @@
                   <h2 className="text-xl sm:text-2xl font-black text-white mb-1">운동 시작하기</h2>
                   <p className="text-gray-400 text-xs mb-3 leading-relaxed">
                     총 <strong className="text-indigo-300">{routine.length}개 운동</strong> · 총 <strong className="text-indigo-300">{steps.filter(s => s.type === 'workout').length}세트</strong><br/>
-                    <span className="text-emerald-400 font-medium">휴식 {restTime}초 ({Math.floor(restTime/60)}분 {restTime%60 ? (restTime%60)+'초' : ''}) · 화면 꺼짐 방지</span>
+                    <span className="text-emerald-400 font-medium">휴식 {restTime}초 · 화면 꺼짐 방지 · 시스템 알림음</span>
                   </p>
                   <div 
                     onClick={handleNextStep}
@@ -497,7 +802,9 @@
                           key={idx}
                           className={`h-2 rounded-full transition-all duration-300 ${
                             isCurrent
-                              ? currentStep.type === 'workout'
+                              ? isAlarmActive
+                                ? 'w-7 bg-red-400 shadow-[0_0_10px_rgba(248,113,113,0.9)] animate-pulse'
+                                : currentStep.type === 'workout'
                                 ? 'w-7 bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)]'
                                 : 'w-7 bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]'
                               : isDone
@@ -510,11 +817,15 @@
                   </div>
 
                   <span className={`text-xs sm:text-sm font-black tracking-widest uppercase px-3.5 py-0.5 rounded-full border shadow-md ${
-                    currentStep.type === 'workout'
+                    isAlarmActive
+                      ? 'text-red-200 bg-red-950/80 border-red-500/50'
+                      : isRestCompletedWaiting
+                      ? 'text-amber-200 bg-amber-950/80 border-amber-500/50'
+                      : currentStep.type === 'workout'
                       ? 'text-indigo-200 bg-indigo-900/60 border-indigo-400/40'
                       : 'text-emerald-200 bg-emerald-900/60 border-emerald-400/40'
                   }`}>
-                    {currentStep.set} / {currentStep.totalSets} 세트 {currentStep.type === 'rest' && '(완료)'}
+                    {currentStep.set} / {currentStep.totalSets} 세트 {currentStep.type === 'rest' && '(휴식)'}
                   </span>
                 </div>
               )}
@@ -552,18 +863,48 @@
                 </div>
               )}
 
-              {/* 4. 휴식 타이머 화면 */}
+              {/* 4. 휴식 중 화면 또는 휴식 완료 알람 상태 */}
               {!isIdle && !isFinished && currentStep?.type === 'rest' && (
                 <div className="animate-fade-in w-full flex flex-col items-center justify-center my-auto">
-                  <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-emerald-900/40 border-4 border-emerald-500 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)] relative">
-                    <span className="text-[10px] sm:text-xs text-emerald-300 font-bold tracking-wider mb-0.5">휴식 타이머</span>
-                    <span className="text-3xl sm:text-4xl font-black tracking-tighter text-white">
-                      {formatTime(time)}
-                    </span>
-                    {!isRunning && (
-                      <span className="absolute bottom-2 text-red-400 text-[9px] font-bold animate-pulse">일시정지</span>
-                    )}
-                  </div>
+                  
+                  {/* (A) 알람 울림 상태 (휴식 시간 0초 도달) */}
+                  {isAlarmActive ? (
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-red-900/50 border-4 border-red-500 flex flex-col items-center justify-center shadow-[0_0_35px_rgba(239,68,68,0.6)] animate-alarm-pulse mb-2">
+                        <Bell className="w-10 h-10 sm:w-12 sm:h-12 text-red-400 animate-bell-ring" />
+                        <span className="text-[10px] text-red-300 font-bold tracking-wider mt-1">휴식 완료!</span>
+                      </div>
+                      <p className="text-xs sm:text-sm font-black text-red-300 animate-pulse">
+                        🔔 알람이 울리고 있습니다!
+                      </p>
+                    </div>
+                  ) : isRestCompletedWaiting ? (
+                    /* (B) 알람 끈 후 운동 시작 대기 상태 */
+                    <div className="flex flex-col items-center justify-center px-3">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-amber-950/60 border-4 border-amber-400/80 flex flex-col items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.3)] mb-2">
+                        <Dumbbell className="w-8 h-8 text-amber-300 animate-bounce" />
+                        <span className="text-[10px] text-amber-200 font-bold mt-0.5">휴식 종료</span>
+                      </div>
+                      <h3 className="text-sm sm:text-base font-extrabold text-amber-200">
+                        {nextStep ? `다음: ${nextStep.name} (${nextStep.set}세트)` : '다음 운동 준비'}
+                      </h3>
+                      <p className="text-xs text-amber-300/80 mt-0.5">
+                        호흡을 가다듬고 시작 버튼을 누르세요!
+                      </p>
+                    </div>
+                  ) : (
+                    /* (C) 일반 휴식 타이머 카운트다운 */
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-emerald-900/40 border-4 border-emerald-500 flex flex-col items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)] relative">
+                      <span className="text-[10px] sm:text-xs text-emerald-300 font-bold tracking-wider mb-0.5">휴식 타이머</span>
+                      <span className="text-3xl sm:text-4xl font-black tracking-tighter text-white">
+                        {formatTime(time)}
+                      </span>
+                      {!isRunning && (
+                        <span className="absolute bottom-2 text-red-400 text-[9px] font-bold animate-pulse">일시정지</span>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               )}
 
@@ -583,53 +924,85 @@
             {/* 하단 컨트롤 버튼 바 */}
             <div className="pt-1.5 border-t border-white/10 flex flex-col gap-1.5 shrink-0">
               
-              <button
-                onClick={isFinished ? resetWorkout : handleNextStep}
-                className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-md
-                  ${isIdle 
-                    ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
-                    : isFinished 
-                      ? 'bg-gray-800 hover:bg-gray-700 text-gray-200'
-                      : currentStep?.type === 'workout'
-                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                  }`}
-              >
-                {isIdle && <><PlayCircle className="w-4 h-4"/> [1] 운동 시작하기</>}
-                {isFinished && <><RotateCcw className="w-4 h-4"/> [1] 루틴 처음으로</>}
-                {!isIdle && !isFinished && currentStep?.type === 'workout' && <><Check className="w-4 h-4"/> [1] 세트 완료 (휴식 시작)</>}
-                {!isIdle && !isFinished && currentStep?.type === 'rest' && <><SkipForward className="w-4 h-4"/> [1] 휴식 건너뛰기</>}
-              </button>
+              {/* 알람 울림 중일 때의 전용 버튼 */}
+              {isAlarmActive ? (
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    onClick={stopAlarm}
+                    className="w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-lg bg-red-600 hover:bg-red-500 text-white animate-pulse"
+                  >
+                    <BellOff className="w-4 h-4"/> [1] 🔔 알람 소리 끄기
+                  </button>
+                  <button
+                    onClick={handleStopAlarmAndStart}
+                    className="w-full py-2 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/40"
+                  >
+                    <Zap className="w-3.5 h-3.5"/> 알람 끄고 바로 운동 시작
+                  </button>
+                </div>
+              ) : isRestCompletedWaiting ? (
+                /* 알람 끈 후 운동 시작 대기 버튼 */
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    onClick={handleNextStep}
+                    className="w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-lg bg-indigo-600 hover:bg-indigo-500 text-white animate-bounce"
+                  >
+                    <Play className="w-4 h-4"/> [1] ▶️ 다음 세트 운동 시작!
+                  </button>
+                </div>
+              ) : (
+                /* 일반 모드 메인 버튼 */
+                <button
+                  onClick={isFinished ? resetWorkout : handleNextStep}
+                  className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-md
+                    ${isIdle 
+                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white' 
+                      : isFinished 
+                        ? 'bg-gray-800 hover:bg-gray-700 text-gray-200'
+                        : currentStep?.type === 'workout'
+                          ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                          : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    }`}
+                >
+                  {isIdle && <><PlayCircle className="w-4 h-4"/> [1] 운동 시작하기</>}
+                  {isFinished && <><RotateCcw className="w-4 h-4"/> [1] 루틴 처음으로</>}
+                  {!isIdle && !isFinished && currentStep?.type === 'workout' && <><Check className="w-4 h-4"/> [1] 세트 완료 (휴식 시작)</>}
+                  {!isIdle && !isFinished && currentStep?.type === 'rest' && <><SkipForward className="w-4 h-4"/> [1] 휴식 건너뛰기</>}
+                </button>
+              )}
 
-              <div className="flex gap-1.5">
-                <button
-                  onClick={handlePrevStep}
-                  disabled={isIdle || stepIndex <= 0}
-                  className="flex-1 py-2 sm:py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 flex items-center justify-center gap-1 text-[11px] sm:text-xs font-bold text-gray-300 transition-all active:scale-[0.98]"
-                >
-                  <SkipBack className="w-3.5 h-3.5"/> [2] 뒤로
-                </button>
-                
-                <button
-                  onClick={toggleTimer}
-                  disabled={isIdle || isFinished || currentStep?.type !== 'rest'}
-                  className={`flex-1 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all active:scale-[0.98] disabled:opacity-30
-                    ${isRunning ? 'bg-amber-900/70 text-amber-200 hover:bg-amber-800' : 'bg-slate-700 text-white hover:bg-slate-600'}
-                  `}
-                >
-                  {isRunning && currentStep?.type === 'rest' ? (
-                    <><Pause className="w-3.5 h-3.5"/> [3] 일시정지</>
-                  ) : (
-                    <><Play className="w-3.5 h-3.5"/> [3] 재생</>
-                  )}
-                </button>
-              </div>
+              {/* 하단 보조 버튼 (뒤로 / 일시정지) */}
+              {(!isAlarmActive && !isRestCompletedWaiting) && (
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={handlePrevStep}
+                    disabled={isIdle || stepIndex <= 0}
+                    className="flex-1 py-2 sm:py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-30 flex items-center justify-center gap-1 text-[11px] sm:text-xs font-bold text-gray-300 transition-all active:scale-[0.98]"
+                  >
+                    <SkipBack className="w-3.5 h-3.5"/> [2] 뒤로
+                  </button>
+                  
+                  <button
+                    onClick={toggleTimer}
+                    disabled={isIdle || isFinished || currentStep?.type !== 'rest'}
+                    className={`flex-1 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all active:scale-[0.98] disabled:opacity-30
+                      ${isRunning ? 'bg-amber-900/70 text-amber-200 hover:bg-amber-800' : 'bg-slate-700 text-white hover:bg-slate-600'}
+                    `}
+                  >
+                    {isRunning && currentStep?.type === 'rest' ? (
+                      <><Pause className="w-3.5 h-3.5"/> [3] 일시정지</>
+                    ) : (
+                      <><Play className="w-3.5 h-3.5"/> [3] 재생</>
+                    )}
+                  </button>
+                </div>
+              )}
 
             </div>
 
           </div>
 
-          {/* ⚙️ [모달] 루틴 및 수치 커스텀 설정 창 */}
+          {/* ⚙️ [모달] 루틴, 휴식시간 및 알람음 설정 창 */}
           {isSettingOpen && (
             <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
               <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
@@ -638,7 +1011,7 @@
                 <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
                   <div className="flex items-center gap-2">
                     <Settings className="w-5 h-5 text-indigo-400" />
-                    <h3 className="font-bold text-sm sm:text-base text-white">운동 루틴 및 수치 설정</h3>
+                    <h3 className="font-bold text-sm sm:text-base text-white">운동 설정 및 알람음</h3>
                   </div>
                   <button 
                     onClick={() => setIsSettingOpen(false)}
@@ -651,7 +1024,81 @@
                 {/* 모달 본문 스크롤 영역 */}
                 <div className="p-4 overflow-y-auto space-y-4 text-xs sm:text-sm flex-1">
                   
-                  {/* 1. 휴식 시간 설정 섹션 */}
+                  {/* 1. 스마트폰 시스템 알림음(알림 볼륨) 설정 */}
+                  <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-bold text-amber-300 flex items-center gap-1.5">
+                        <Smartphone className="w-4 h-4" /> 📱 스마트폰 알림 소리(알림 볼륨)
+                      </span>
+                      <span className={`text-[11px] px-2 py-0.5 rounded font-bold ${
+                        notifPermission === 'granted' 
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                          : 'bg-red-500/20 text-red-300 border border-red-500/40'
+                      }`}>
+                        {notifPermission === 'granted' ? '허용됨 (알림음 작동)' : '미허용'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mb-2 leading-relaxed">
+                      미디어 음량이 아닌 스마트폰의 <strong>[알림 볼륨]</strong>으로 알람 소리와 진동을 출력합니다.
+                    </p>
+                    {notifPermission !== 'granted' && (
+                      <button
+                        onClick={requestNotificationPermission}
+                        className="w-full py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow transition-all"
+                      >
+                        <Bell className="w-3.5 h-3.5" /> 알림 권한 허용하기
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 2. 알람 소리 선택 섹션 */}
+                  <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
+                    <label className="font-bold text-red-400 block mb-2 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Volume2 className="w-4 h-4" /> 🔔 알람 소리 종류 (화면 내 재생)
+                      </span>
+                      <button
+                        onClick={() => playSingleAlarmBeep(tempSoundType)}
+                        className="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold flex items-center gap-1 transition-all active:scale-95"
+                      >
+                        <Volume2 className="w-3 h-3" /> 미리듣기
+                      </button>
+                    </label>
+                    
+                    <div className="space-y-1.5">
+                      {SOUND_OPTIONS.map((opt) => (
+                        <div
+                          key={opt.id}
+                          onClick={() => setTempSoundType(opt.id)}
+                          className={`p-2.5 rounded-lg border cursor-pointer flex items-center justify-between transition-all ${
+                            tempSoundType === opt.id
+                              ? 'bg-red-950/40 border-red-500/70 text-white'
+                              : 'bg-slate-900/80 border-slate-700/70 text-slate-400 hover:bg-slate-800'
+                          }`}
+                        >
+                          <div>
+                            <div className="font-bold text-xs flex items-center gap-1.5">
+                              {opt.name}
+                              {tempSoundType === opt.id && <span className="text-[10px] text-red-400 font-normal">● 선택됨</span>}
+                            </div>
+                            <div className="text-[11px] text-slate-400 mt-0.5">{opt.desc}</div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playSingleAlarmBeep(opt.id);
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300"
+                            title="이 소리 테스트"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. 휴식 시간 설정 섹션 */}
                   <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
                     <label className="font-bold text-emerald-400 block mb-1.5 flex items-center justify-between">
                       <span>⏱️ 세트 간 휴식 시간 (초 단위)</span>
@@ -661,7 +1108,7 @@
                       <input 
                         type="number" 
                         min="5" 
-                        max="600"
+                        max="600" 
                         step="5"
                         value={tempRestTime}
                         onChange={(e) => setTempRestTime(Math.max(5, parseInt(e.target.value, 10) || 5))}
@@ -685,7 +1132,7 @@
                     </div>
                   </div>
 
-                  {/* 2. 운동 목록 편집 섹션 */}
+                  {/* 4. 운동 목록 편집 섹션 */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-bold text-indigo-300">🏋️ 등록된 운동 목록 ({tempRoutine.length}개)</span>
@@ -701,7 +1148,6 @@
                       {tempRoutine.map((ex, idx) => (
                         <div key={ex.id || idx} className="bg-slate-800/80 border border-slate-700/70 rounded-xl p-3 flex flex-col gap-2 relative">
                           
-                          {/* 운동 상단: 순서 이동 및 삭제 버튼 */}
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold text-indigo-400 bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/40">
                               #{idx + 1}번 운동
@@ -733,7 +1179,6 @@
                             </div>
                           </div>
 
-                          {/* 운동명 입력 */}
                           <div>
                             <label className="text-[10px] text-slate-400 block mb-0.5">운동 이름</label>
                             <input 
@@ -745,7 +1190,6 @@
                             />
                           </div>
 
-                          {/* 세트수 / 무게 / 횟수 그리드 */}
                           <div className="grid grid-cols-3 gap-2">
                             <div>
                               <label className="text-[10px] text-slate-400 block mb-0.5">세트 수</label>
@@ -780,7 +1224,6 @@
                             </div>
                           </div>
 
-                          {/* 유튜브 검색 키워드 */}
                           <div>
                             <label className="text-[10px] text-slate-500 block mb-0.5">유튜브 자세 검색어</label>
                             <input 
@@ -835,7 +1278,7 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
 
-    // Service Worker Registration
+    // Service Worker 등록
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
