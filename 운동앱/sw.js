@@ -105,6 +105,11 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkRes;
+      });
+    })
+  );
+});
+
 // 4. 시스템 알림 클릭 이벤트 처리
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();

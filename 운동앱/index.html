@@ -174,6 +174,47 @@
       const [tempRestTime, setTempRestTime] = useState(restTime);
       const [tempSoundType, setTempSoundType] = useState(soundType);
 
+      // --- PWA 다운로드 및 설치 관리 ---
+      const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
+      const [isAppInstalled, setIsAppInstalled] = useState(() => {
+        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      });
+
+      useEffect(() => {
+        const handleBeforeInstall = (e) => {
+          e.preventDefault();
+          setDeferredInstallPrompt(e);
+        };
+        const handleAppInstalled = () => {
+          setIsAppInstalled(true);
+          setDeferredInstallPrompt(null);
+          console.log('[운동앱] 앱 다운로드/설치 완료');
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+        window.addEventListener('appinstalled', handleAppInstalled);
+
+        return () => {
+          window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+          window.removeEventListener('appinstalled', handleAppInstalled);
+        };
+      }, []);
+
+      // 앱 다운로드/설치 실행 함수
+      const handleInstallClick = async () => {
+        if (deferredInstallPrompt) {
+          deferredInstallPrompt.prompt();
+          const choiceResult = await deferredInstallPrompt.userChoice;
+          if (choiceResult.outcome === 'accepted') {
+            setIsAppInstalled(true);
+            setDeferredInstallPrompt(null);
+          }
+        } else {
+          // 브라우저 자체 설치 안내 (iOS Safari 또는 크롬 주소창)
+          alert('📱 [운동앱 다운로드 안내]\n\n1. 스마트폰 브라우저 메뉴의 [홈 화면에 추가] 또는 [앱 설치]를 눌러주세요.\n(아이폰 사파리는 화면 하단 공유 아이콘 → [홈 화면에 추가] 선택)');
+        }
+      };
+
       // 루틴 변경 시 steps 동적 계산
       const steps = useMemo(() => {
         const result = [];
@@ -710,6 +751,25 @@
                 >
                   🏠 홈
                 </a>
+                <a 
+                  href="../새로고침/index.html?dest=workout" 
+                  title="캐시 비우고 최신 버전으로 새로고침" 
+                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-indigo-300 border border-slate-700 flex items-center gap-1 text-[10px] transition-colors"
+                >
+                  🔄
+                </a>
+                
+                {/* PWA 앱 다운로드/설치 버튼 (설치 안 된 웹 브라우저 상태일 때 표시) */}
+                {!isAppInstalled && (
+                  <button
+                    onClick={handleInstallClick}
+                    title="이 운동앱을 스마트폰이나 PC에 단독 앱으로 설치합니다"
+                    className="px-2 py-0.5 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold flex items-center gap-1 text-[10px] transition-all shadow-sm active:scale-95 animate-pulse"
+                  >
+                    <span>📲 앱 설치</span>
+                  </button>
+                )}
+
                 <div className="flex items-center gap-1 font-bold text-gray-200">
                   <Dumbbell className="w-3.5 h-3.5 text-indigo-400" />
                   <span>운동 루틴</span>
@@ -1024,6 +1084,30 @@
                 {/* 모달 본문 스크롤 영역 */}
                 <div className="p-4 overflow-y-auto space-y-4 text-xs sm:text-sm flex-1">
                   
+                  {/* PWA 앱 다운로드/설치 안내 카드 */}
+                  {!isAppInstalled ? (
+                    <div className="bg-gradient-to-r from-indigo-950/80 to-slate-900 border border-indigo-500/40 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-lg">
+                      <div>
+                        <div className="font-bold text-xs sm:text-sm text-indigo-300 flex items-center gap-1.5">
+                          <span>📲 운동앱 다운로드 (홈 화면에 설치)</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          스마트폰/PC에 설치하면 인터넷 없이도 바로 실행됩니다.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleInstallClick}
+                        className="shrink-0 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/30 active:scale-95 flex items-center gap-1"
+                      >
+                        다운로드
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-800/40 border border-emerald-500/30 rounded-xl p-2.5 flex items-center gap-2 text-xs text-emerald-400">
+                      <span>✓ 단독 앱 모드로 설치되어 실행 중입니다.</span>
+                    </div>
+                  )}
+
                   {/* 1. 스마트폰 시스템 알림음(알림 볼륨) 설정 */}
                   <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5">
                     <div className="flex items-center justify-between mb-1.5">
