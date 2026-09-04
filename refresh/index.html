@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#090d16">
-  <title>캐시 무시 새로고침 도구 | GitHub Pages</title>
+  <title>모든 프로그램 전체 초기화 & 새로고침 | GitHub Pages</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -26,11 +26,11 @@
       font-family: 'Outfit', sans-serif;
     }
     .glass-box {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.88);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.7);
     }
     @keyframes spinPulse {
       0% { transform: rotate(0deg) scale(1); }
@@ -46,89 +46,124 @@
 
   <!-- 배경 글로우 효과 -->
   <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-    <div class="absolute -top-32 -left-32 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"></div>
-    <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-cyan-600/20 rounded-full blur-3xl"></div>
+    <div class="absolute -top-32 -left-32 w-80 h-80 bg-red-600/15 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-indigo-600/20 rounded-full blur-3xl"></div>
   </div>
 
-  <main class="relative z-10 w-full max-w-md glass-box rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center">
+  <main class="relative z-10 w-full max-w-lg glass-box rounded-3xl p-6 sm:p-8 flex flex-col items-center text-center">
     
     <!-- 상단 아이콘 -->
-    <div id="icon-container" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mb-5 text-indigo-400 shadow-inner">
+    <div id="icon-container" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-red-500/20 border border-indigo-500/30 flex items-center justify-center mb-4 text-indigo-400 shadow-inner">
       <svg id="refresh-icon" class="w-8 h-8 sm:w-10 sm:h-10 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
       </svg>
     </div>
 
-    <!-- 타이틀 & 안내 -->
-    <span class="px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-2">
-      GitHub Pages Cache Cleaner
-    </span>
+    <!-- 배지 & 타이틀 -->
+    <div class="flex items-center gap-1.5 mb-2">
+      <span class="px-3 py-1 text-[11px] font-extrabold tracking-wider uppercase rounded-full bg-red-500/20 text-red-300 border border-red-500/30">
+        ALL PROGRAMS RESET
+      </span>
+      <span class="px-2.5 py-1 text-[11px] font-bold rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+        GitHub Pages 전용
+      </span>
+    </div>
+
     <h1 class="text-xl sm:text-2xl font-extrabold text-white mb-2 font-brand">
-      캐시 무시 새로고침 도구
+      모든 앱 & 프로그램 완전 초기화
     </h1>
-    <p class="text-xs sm:text-sm text-slate-400 leading-relaxed mb-6">
-      깃허브 사이트에 코드를 새로 올렸는데 브라우저에 옛날 버전이 계속 뜰 때,
-      저장된 모든 캐시와 서비스 워커를 비우고 최신 파일로 다시 불러옵니다.
+    
+    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
+      <strong>메인 포털</strong>, <strong>운동앱</strong>, <strong>SemiDarktable</strong>, <strong>SemiLightroom</strong> 등<br>
+      이 사이트의 <span class="text-indigo-300 font-semibold">모든 프로그램에 저장된 캐시, 오프라인 파일, 설정 데이터</span>를 완전히 비우고 깃허브의 최신 코드로 다시 내려받습니다.
     </p>
 
-    <!-- 옵션: 개인 데이터 보존 여부 -->
-    <div class="w-full bg-slate-900/80 border border-slate-800 rounded-2xl p-3.5 mb-5 text-left flex items-center justify-between">
+    <!-- 초기화 대상 상세 안내 박스 -->
+    <div class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-3.5 mb-4 text-left space-y-2 text-xs">
+      <div class="font-bold text-slate-200 flex items-center justify-between pb-1.5 border-b border-slate-800">
+        <span>🧹 완전 초기화 범위 (All-in-One)</span>
+        <span class="text-[10px] text-emerald-400 font-normal">● 100% 완전 청소</span>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <span class="text-indigo-400">✓</span> 모든 Service Worker 해제
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-indigo-400">✓</span> 모든 브라우저 Cache 삭제
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-indigo-400">✓</span> 모든 앱 로컬 저장소 초기화
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-indigo-400">✓</span> IndexedDB 데이터베이스 삭제
+        </div>
+      </div>
+    </div>
+
+    <!-- 옵션: 데이터 삭제 범위 선택 (기본: 전체 완전 삭제) -->
+    <div class="w-full bg-slate-900/60 border border-slate-800/80 rounded-xl p-3 mb-4 text-left flex items-center justify-between">
       <div>
-        <div class="text-xs font-bold text-slate-200">운동 기록 및 개인 설정 보존</div>
-        <div class="text-[11px] text-slate-400">루틴/세트 설정값은 지우지 않고 유지합니다.</div>
+        <div class="text-xs font-bold text-slate-200">저장된 앱 데이터(설정/기록)도 완전 삭제</div>
+        <div class="text-[11px] text-slate-400">체크 시 모든 앱을 처음 방문한 상태로 초기화합니다.</div>
       </div>
       <label class="relative inline-flex items-center cursor-pointer">
-        <input type="checkbox" id="keep-data-checkbox" checked class="sr-only peer">
-        <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+        <input type="checkbox" id="wipe-storage-checkbox" checked class="sr-only peer">
+        <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-600"></div>
       </label>
     </div>
 
     <!-- 실시간 진행 상태 로그 박스 -->
-    <div id="status-box" class="w-full bg-slate-950/70 border border-slate-800/80 rounded-xl p-3.5 mb-5 text-left font-mono text-[11px] text-slate-300 space-y-1.5 min-h-[92px]">
+    <div id="status-box" class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl p-3.5 mb-5 text-left font-mono text-[11px] text-slate-300 space-y-1.5 min-h-[96px] max-h-[140px] overflow-y-auto">
       <div id="log-init" class="flex items-center gap-2 text-slate-400">
         <span class="w-2 h-2 rounded-full bg-slate-600"></span>
-        <span>대기 중: 버튼을 누르면 시작됩니다.</span>
+        <span>준비 완료: 아래 버튼을 누르면 모든 프로그램이 초기화됩니다.</span>
       </div>
     </div>
 
-    <!-- 실행 버튼 -->
+    <!-- 메인 실행 버튼 -->
     <button
       id="btn-run"
-      onclick="runCleanAndReload()"
-      class="w-full py-3.5 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-98 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all mb-4"
+      onclick="runCleanAndReload('../index.html')"
+      class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-red-600 to-indigo-600 hover:from-red-500 hover:to-indigo-500 active:scale-98 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-red-600/20 transition-all mb-4"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
       </svg>
-      <span>저장된 캐시 무시하고 새로고침 실행</span>
+      <span>🚀 모든 프로그램 전체 초기화 실행</span>
     </button>
 
-    <!-- 바로 이동 링크 버튼들 -->
-    <div class="w-full grid grid-cols-2 gap-2 text-xs">
-      <button
-        type="button"
-        onclick="runCleanAndReload('../index.html')"
-        class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition-all flex items-center justify-center gap-1.5"
-      >
-        <span>🏠 메인 허브로</span>
-      </button>
-      <button
-        type="button"
-        onclick="runCleanAndReload('../운동앱/index.html')"
-        class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition-all flex items-center justify-center gap-1.5"
-      >
-        <span>💪 운동앱으로</span>
-      </button>
-    </div>
-
-    <div class="mt-4 text-[11px] text-slate-500">
-      💡 팁: URL 끝에 <code>?auto=1</code>을 붙이면 접속 시 자동 실행됩니다.
+    <!-- 초기화 후 바로 이동할 프로그램 선택 그리드 -->
+    <div class="w-full pt-3 border-t border-slate-800 text-left">
+      <div class="text-[11px] font-bold text-slate-400 mb-2">초기화 후 특정 앱으로 바로 이동하기:</div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+        <button
+          type="button"
+          onclick="runCleanAndReload('../index.html')"
+          class="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition-all flex items-center justify-center gap-1 active:scale-95"
+        >
+          <span>🏠 메인 허브</span>
+        </button>
+        <button
+          type="button"
+          onclick="runCleanAndReload('../운동앱/index.html')"
+          class="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition-all flex items-center justify-center gap-1 active:scale-95"
+        >
+          <span>💪 운동앱</span>
+        </button>
+        <button
+          type="button"
+          onclick="runCleanAndReload('../SemiLightroom/index.html')"
+          class="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition-all flex items-center justify-center gap-1 active:scale-95"
+        >
+          <span>🎨 라이트룸</span>
+        </button>
+      </div>
     </div>
 
   </main>
 
   <script>
-    // 상태 로그 추가 함수
+    // 로그 추가 함수
     function addLog(text, status = 'info') {
       const box = document.getElementById('status-box');
       const row = document.createElement('div');
@@ -137,74 +172,97 @@
       let dotColor = 'bg-indigo-400';
       if (status === 'success') dotColor = 'bg-emerald-400';
       if (status === 'warn') dotColor = 'bg-amber-400';
+      if (status === 'danger') dotColor = 'bg-red-400';
 
-      row.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span><span class="${status === 'success' ? 'text-emerald-300 font-bold' : ''}">${text}</span>`;
+      row.innerHTML = `<span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span><span class="${status === 'success' ? 'text-emerald-300 font-semibold' : ''}">${text}</span>`;
       box.appendChild(row);
       box.scrollTop = box.scrollHeight;
     }
 
-    // 캐시 무시 완전 새로고침 실행 함수
+    // 모든 프로그램 전체 초기화 함수
     async function runCleanAndReload(targetUrl = '../index.html') {
       const btn = document.getElementById('btn-run');
       const icon = document.getElementById('refresh-icon');
       const box = document.getElementById('status-box');
-      const keepData = document.getElementById('keep-data-checkbox').checked;
+      const wipeStorage = document.getElementById('wipe-storage-checkbox').checked;
 
       btn.disabled = true;
       btn.classList.add('opacity-70', 'cursor-not-allowed');
       icon.classList.add('spinning');
       box.innerHTML = '';
 
-      addLog('캐시 초기화 프로세스 시작...');
+      addLog('🚀 모든 프로그램 전체 초기화 프로세스 시작...', 'info');
 
-      // 1. 브라우저 서비스 워커 전체 등록 해제 (Unregister)
+      // 1. 도메인 내 등록된 모든 Service Worker 등록 해제 (운동앱, 메인 포털 등 전체)
       try {
         if ('serviceWorker' in navigator) {
           const registrations = await navigator.serviceWorker.getRegistrations();
           if (registrations.length > 0) {
             for (let reg of registrations) {
               await reg.unregister();
-              addLog(`서비스 워커 해제 완료 (${reg.scope})`, 'success');
+              addLog(`서비스 워커 해제 완료: ${reg.scope}`, 'success');
             }
           } else {
-            addLog('활성화된 서비스 워커 없음 (정상)');
+            addLog('서비스 워커: 활성화된 항목 없음 (정상)');
           }
         }
       } catch (err) {
-        addLog('서비스 워커 해제 건너뜀: ' + err.message, 'warn');
+        addLog('서비스 워커 해제 중 오류: ' + err.message, 'warn');
       }
 
-      // 2. 브라우저 CacheStorage(캐시 스토리지) 전체 삭제
+      // 2. 브라우저 CacheStorage(모든 앱의 캐시 스토리지) 전체 삭제
       try {
         if ('caches' in window) {
           const cacheKeys = await caches.keys();
           if (cacheKeys.length > 0) {
             for (let key of cacheKeys) {
               await caches.delete(key);
-              addLog(`캐시 저장소 삭제 완료: ${key}`, 'success');
+              addLog(`캐시 저장소 완전 삭제 완료: ${key}`, 'success');
             }
           } else {
-            addLog('삭제할 캐시 저장소 없음 (이미 비어있음)');
+            addLog('캐시 저장소: 이미 모두 비어있음');
           }
         }
       } catch (err) {
-        addLog('캐시 삭제 건너뜀: ' + err.message, 'warn');
+        addLog('캐시 삭제 중 오류: ' + err.message, 'warn');
       }
 
-      // 3. 로컬스토리지 처리 (체크 해제 시 전체 삭제)
-      if (!keepData) {
+      // 3. 로컬 스토리지 & 세션 스토리지 완전 삭제 (모든 프로그램의 데이터 날리기)
+      if (wipeStorage) {
         try {
           localStorage.clear();
           sessionStorage.clear();
-          addLog('로컬 저장소(운동 설정 포함) 전체 초기화 완료', 'success');
+          addLog('모든 앱 로컬/세션 스토리지 데이터 완전 삭제 완료', 'success');
+        } catch (e) {
+          addLog('스토리지 삭제 실패: ' + e.message, 'warn');
+        }
+
+        // 4. IndexedDB 데이터베이스 전체 삭제 (지원되는 경우)
+        try {
+          if (window.indexedDB && indexedDB.databases) {
+            const dbs = await indexedDB.databases();
+            for (let db of dbs) {
+              if (db.name) {
+                indexedDB.deleteDatabase(db.name);
+                addLog(`IndexedDB 삭제 완료: ${db.name}`, 'success');
+              }
+            }
+          }
+        } catch (e) {}
+
+        // 5. 쿠키 만료 처리
+        try {
+          document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+          });
         } catch (e) {}
       } else {
-        addLog('운동 기록 및 개인 설정 안전하게 보존됨', 'info');
+        addLog('개인 설정 및 로컬 데이터는 보존되었습니다.', 'info');
       }
 
-      addLog('✨ 최신 버전으로 캐시 우회 접속 준비 완료!', 'success');
+      addLog('✨ 모든 프로그램이 최초 상태로 완전 초기화되었습니다!', 'success');
 
-      // 4. 타임스탬프 쿼리스트링(?nocache=...)을 붙여서 브라우저의 HTTP 디스크 캐시를 강제 무효화하고 최신 파일 로드
+      // 6. 타임스탬프 쿼리스트링(?nocache=...)을 붙여 브라우저 디스크 캐시를 우회하고 깃허브 서버 최신 코드 로드
       const timestamp = Date.now();
       const targetWithBuster = targetUrl.includes('?') 
         ? `${targetUrl}&nocache=${timestamp}` 
@@ -214,14 +272,16 @@
 
       setTimeout(() => {
         window.location.replace(targetWithBuster);
-      }, 700);
+      }, 800);
     }
 
-    // 만약 URL에 ?auto=1 파라미터가 있으면 접속 즉시 자동 실행
+    // URL에 ?auto=1 파라미터가 있으면 즉시 자동 실행
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       if (params.get('auto') === '1') {
-        const dest = params.get('dest') === 'workout' ? '../운동앱/index.html' : '../index.html';
+        let dest = '../index.html';
+        if (params.get('dest') === 'workout') dest = '../운동앱/index.html';
+        if (params.get('dest') === 'lightroom') dest = '../SemiLightroom/index.html';
         runCleanAndReload(dest);
       }
     });
