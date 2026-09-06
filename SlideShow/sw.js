@@ -1,5 +1,5 @@
-// SlideShow PWA Bypass Service Worker v1
-const CACHE_NAME = 'slideshow-pwa-v1';
+// SlideShow PWA Bypass Service Worker v2
+const CACHE_NAME = 'slideshow-pwa-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

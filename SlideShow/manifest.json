@@ -2,7 +2,7 @@
   "name": "슬라이드 쇼",
   "short_name": "슬라이드",
   "description": "랜덤 이미지 및 비디오 슬라이드쇼 앱",
-  "id": "slideshow-pwa-v1",
+  "id": "slideshow-pwa-v2",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
