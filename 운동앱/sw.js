@@ -1,5 +1,5 @@
-// PWA 크래시 방지를 위한 단순 서비스 워커 (Bypass Cache v8)
-const CACHE_NAME = 'workout-timer-bypass-v8';
+// PWA 크래시 방지를 위한 단순 서비스 워커 (Bypass Cache v11)
+const CACHE_NAME = 'workout-timer-bypass-v11';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting(); // 즉시 설치

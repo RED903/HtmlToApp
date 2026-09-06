@@ -1371,10 +1371,10 @@
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
 
-    // Service Worker 등록
+    // Service Worker 등록 및 경로 동기화
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
+        navigator.serviceWorker.register('sw.js', { scope: '.' }).then((registration) => {
           console.log('ServiceWorker registration successful');
           registration.update();
         }).catch((err) => {
@@ -1382,6 +1382,17 @@
         });
       });
     }
+
+    // PWA 중복 설치 방지 (Hard Lock)
+    window.addEventListener('beforeinstallprompt', (e) => {
+      if (localStorage.getItem('pwa_installed_lock') === 'true') {
+        e.preventDefault(); // 이미 설치 기록이 있으면 크롬 프롬프트 아예 차단
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      localStorage.setItem('pwa_installed_lock', 'true');
+    });
   </script>
 </body>
 </html>
