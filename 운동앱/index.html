@@ -61,6 +61,15 @@
 <body>
   <div id="root"></div>
 
+  <script>
+    // PWA 빈 화면 문제 추적용 전역 에러 핸들러
+    window.addEventListener('error', function(e) {
+      document.body.innerHTML += '<div style="color:red; background:white; position:fixed; top:0; left:0; z-index:9999; padding:10px; font-size:12px; max-height: 50vh; overflow-y:auto; border:2px solid red;">' + e.message + '<br>' + e.filename + ':' + e.lineno + '</div>';
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      document.body.innerHTML += '<div style="color:red; background:white; position:fixed; top:50vh; left:0; z-index:9999; padding:10px; font-size:12px; max-height: 50vh; overflow-y:auto; border:2px solid orange;">' + e.reason + '</div>';
+    });
+  </script>
   <script type="text/babel">
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
