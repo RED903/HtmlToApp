@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>랜덤 이미지 슬라이드쇼 (HTML)</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #0f172a; /* slate-900 */
+      --panel: #1e293b; /* slate-800 */
+      --text: #f8fafc; /* slate-50 */
+      --accent: #3b82f6; /* blue-500 */
+    }
+    html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text); overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+    
+    .main { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+    
+    .stage {
+      flex: 1 1 auto;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+    .media {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+      transition: opacity 0.5s ease-in-out;
+    }
+    .media.active { display: block; }
+    
+    .overlay-countdown {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #fff;
+      font-weight: 700;
+      font-size: 20px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      user-select: none;
+      display: none;
+      z-index: 10;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .fullscreen-exit-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+      display: none;
+      z-index: 20;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: background 0.2s;
+    }
+    .fullscreen-exit-btn:hover { background: rgba(255,255,255,0.3); }
+
+    /* Glassmorphism Bottom Bar */
+    .bottom-bar {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 20px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 30;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 90%;
+      max-width: 800px;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn:hover { background: rgba(255,255,255,0.2); transform: translateY(-1px); }
+    .btn:active { background: rgba(255,255,255,0.15); transform: translateY(1px); }
+    .btn-primary { background: #3b82f6; border-color: #2563eb; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-icon { padding: 10px; border-radius: 50%; }
+
+    /* 모바일 반응형 숨김 클래스 */
+    @media (max-width: 640px) {
+      .hide-on-mobile { display: none !important; }
+      .bottom-bar { bottom: 16px; padding: 10px; gap: 8px; border-radius: 20px; }
+      .btn { padding: 8px 12px; font-size: 13px; }
+      .btn-icon { padding: 8px; }
+    }
+
+    .no-select { user-select: none; -webkit-user-select: none; }
+    .hidden { display: none !important; }
+    
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0,0,0,0.8);
+      z-index: 15;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* SVG 아이콘 */
+    svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+</head>
+<body>
+  <div class="main">
+    <div id="stage" class="stage" tabindex="0" aria-label="미디어 무대">
+      <img id="img" class="media" alt="이미지" loading="eager" decoding="async" fetchpriority="high" />
+      <video id="video" class="media" preload="auto" playsinline></video>
+      <div id="overlayCountdown" class="overlay-countdown">10</div>
+      
+      <div id="fullscreenExit" class="fullscreen-exit-btn" title="전체화면 종료">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </div>
+      
+      <div id="loadingOverlay" class="loading-overlay hidden"><div class="spinner"></div></div>
+      <div id="clickCatcher" style="position:absolute;inset:0;cursor:pointer;z-index:1"></div>
+      
+      <!-- 하단 플로팅 컨트롤 바 -->
+      <div class="bottom-bar" id="bottomBar">
+        <!-- 폴더 제어 영역 -->
+        <div class="flex items-center gap-2 mr-auto">
+          <button id="btnSelect" class="btn btn-primary" title="이미지 폴더 열기">
+            <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span class="hide-on-mobile">폴더 열기</span>
+          </button>
+          <button id="btnLast" class="btn" title="최근 폴더 다시 열기">
+            <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+          </button>
+        </div>
+
+        <!-- 재생 제어 영역 -->
+        <div class="flex items-center gap-2">
+          <button id="btnPrev" class="btn btn-icon" title="이전 이미지">
+            <svg viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+          </button>
+          
+          <button id="btnPlay" class="btn btn-primary btn-icon" title="재생/일시정지" style="width: 48px; height: 48px; border-radius: 50%; justify-content: center;">
+            <svg viewBox="0 0 24 24" style="width: 24px; height: 24px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          </button>
+          
+          <button id="btnNext" class="btn btn-icon" title="다음 이미지">
+            <svg viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+          </button>
+        </div>
+
+        <!-- 설정 제어 영역 -->
+        <div class="flex items-center gap-2 ml-auto">
+          <button id="btnRandom" class="btn" title="순서/랜덤 셔플 모드 전환">
+            <svg viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+            <span class="hide-on-mobile text-xs w-16 text-center block" style="font-size:11px;">순차 정렬</span>
+          </button>
+          <button id="btnTime" class="btn no-select" title="좌클릭: 증가 / 우클릭: 감소">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span style="min-width: 2rem; text-align: center;">10초</span>
+          </button>
+          <button id="btnFullscreen" class="btn btn-icon" title="전체화면">
+            <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- webkitdirectory 폴백 입력 -->
+    <input id="dirInput" type="file" webkitdirectory directory multiple class="hidden" />
+  </div>
+
+  <script>
+    (function() {
+      // 상태
+      const timeOptions = [1,2,3,4,5,8,10,12,15,20,30];
+      let currentTimeIndex = 6; // 기본 10초
+      let slideIntervalSec = timeOptions[currentTimeIndex];
+      let isPlaying = false;
+      let isRandom = loadRandomState();
+      let mediaList = []; // {type, name, file, lastModified}
+      let currentIndex = 0;
+      let countdown = 0;
+      let nextUpdateTime = null;
+      let countdownTimerId = null;
+      let currentType = null; // 'image' | 'video'
+      let lastSourceType = null; // 'fs' | 'upload'
+      const URL_CACHE_LIMIT = 40; // 모바일 환경 LRU 캐시 제한
+      const urlCache = new Map(); // File -> objectURL
+      let isBatchLoading = false;
+      let batchLoadVersion = 0;
+
+      // 요소
+      const stage = document.getElementById('stage');
+      const imgEl = document.getElementById('img');
+      const videoEl = document.getElementById('video');
+      const overlayEl = document.getElementById('overlayCountdown');
+      const bottomBar = document.getElementById('bottomBar');
+      const fullscreenExit = document.getElementById('fullscreenExit');
+      const clickCatcher = document.getElementById('clickCatcher');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+
+      const btnPrev = document.getElementById('btnPrev');
+      const btnLast = document.getElementById('btnLast');
+      const btnSelect = document.getElementById('btnSelect');
+      const btnRandom = document.getElementById('btnRandom');
+      const btnPlay = document.getElementById('btnPlay');
+      const btnNext = document.getElementById('btnNext');
+      const btnTime = document.getElementById('btnTime');
+      const btnFullscreen = document.getElementById('btnFullscreen');
+      const dirInput = document.getElementById('dirInput');
+
+      // 확장자
+      const validExt = ['.jpg','.jpeg','.png','.gif','.bmp','.mp4','.avi','.mov','.mkv'];
+      const imageExt = ['.jpg','.jpeg','.png','.gif','.bmp'];
+      const videoExt = ['.mp4','.avi','.mov','.mkv'];
+
+      // IndexedDB로 마지막 폴더 핸들 저장/불러오기 (File System Access API)
+      const DB_NAME = 'slideshow-db';
+      const DB_STORE = 'handles';
+      function openDb() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(DB_STORE)) {
+              db.createObjectStore(DB_STORE);
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+      async function saveLastFolderHandle(handle) {
+        try {
+          const db = await openDb();
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction(DB_STORE, 'readwrite');
+            tx.objectStore(DB_STORE).put(handle, 'lastFolder');
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+          });
+        } catch (e) {
+          console.warn('설정 저장 실패(IndexedDB):', e);
+        }
+      }
+      async function loadLastFolderHandle() {
+        try {
+          const db = await openDb();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction(DB_STORE, 'readonly');
+            const req = tx.objectStore(DB_STORE).get('lastFolder');
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+          });
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function loadRandomState() {
+        try {
+          const raw = localStorage.getItem('slideshow:is_random');
+          return raw === null ? false : raw === 'true'; // 기본값: 최신순(랜덤 아님)
+        } catch { return false; }
+      }
+      function persistState() {
+        try {
+          localStorage.setItem('slideshow:is_random', String(isRandom));
+          localStorage.setItem('slideshow:time_index', String(currentTimeIndex));
+        } catch {}
+      }
+      (function initFromStorage(){
+        try {
+          const idx = parseInt(localStorage.getItem('slideshow:time_index') || '4', 10);
+          if (!Number.isNaN(idx) && idx >= 0 && idx < timeOptions.length) {
+            currentTimeIndex = idx;
+            slideIntervalSec = timeOptions[currentTimeIndex];
+          }
+        } catch {}
+      })();
+
+      function updateRandomButton() {
+        if(isRandom) {
+          btnRandom.innerHTML = '<svg viewBox="0 0 24 24" style="stroke: #3b82f6;"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg><span class="hide-on-mobile text-xs w-16 text-center block" style="font-size:11px; color:#3b82f6;">랜덤 정렬</span>';
+        } else {
+          btnRandom.innerHTML = '<svg viewBox="0 0 24 24"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg><span class="hide-on-mobile text-xs w-16 text-center block" style="font-size:11px;">순차 정렬</span>';
+        }
+      }
+      function updateTimeButton() {
+        if(btnTime.querySelector('span')) btnTime.querySelector('span').textContent = `${slideIntervalSec}초`;
+      }
+      updateRandomButton();
+      updateTimeButton();
+
+      // 유틸
+      function toExt(name) {
+        const i = name.lastIndexOf('.');
+        return i >= 0 ? name.slice(i).toLowerCase() : '';
+      }
+      function revokeUrlSafe(url) {
+        try { if (url) URL.revokeObjectURL(url); } catch {}
+      }
+
+      function getUrlForFile(file) {
+        if (!file) return '';
+        if (urlCache.has(file)) {
+          const existing = urlCache.get(file);
+          urlCache.delete(file);
+          urlCache.set(file, existing);
+          return existing;
+        }
+        const url = URL.createObjectURL(file);
+        urlCache.set(file, url);
+        if (urlCache.size > URL_CACHE_LIMIT) {
+          const oldestFile = urlCache.keys().next().value;
+          const oldestUrl = urlCache.get(oldestFile);
+          urlCache.delete(oldestFile);
+          revokeUrlSafe(oldestUrl);
+        }
+        return url;
+      }
+
+      function sortMedia() {
+        if (isRandom) {
+          // Fisher-Yates
+          for (let i = mediaList.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [mediaList[i], mediaList[j]] = [mediaList[j], mediaList[i]];
+          }
+        } else {
+          mediaList.sort((a, b) => b.lastModified - a.lastModified);
+        }
+      }
+
+      function scheduleIdle(fn) {
+        if (window.requestIdleCallback) {
+          return requestIdleCallback(fn, { timeout: 200 });
+        }
+        return setTimeout(fn, 0);
+      }
+
+      function applyMediaAppend(items, isFirstBatch=false) {
+        if (!Array.isArray(items) || !items.length) return;
+        const wasEmpty = mediaList.length === 0;
+        const currentItem = mediaList[currentIndex];
+        const currentName = currentItem ? currentItem.name : null;
+        mediaList.push(...items);
+        // 매 배치마다 최신순 정렬 유지
+        sortMedia();
+        // 현재 항목 보존
+        if (currentName) {
+          const idx = mediaList.findIndex(it => it.name === currentName);
+          if (idx >= 0) currentIndex = idx;
+        }
+        if ((isFirstBatch || wasEmpty) && mediaList.length) {
+          currentIndex = 0;
+          showCurrent();
+        }
+      }
+
+      function finalizeSortPreserveCurrent() {
+        if (!mediaList.length) return;
+        const currentItem = mediaList[currentIndex];
+        const currentName = currentItem ? currentItem.name : null;
+        sortMedia();
+        if (currentName) {
+          const idx = mediaList.findIndex(it => it.name === currentName);
+          if (idx >= 0) currentIndex = idx;
+        }
+        showCurrent();
+      }
+
+      function stopCurrentMedia() {
+        try {
+          if (currentType === 'video') {
+            videoEl.pause();
+            // 소스만 제거 (URL 해제는 하지 않음 — 다시 사용할 수 있도록 유지)
+            videoEl.removeAttribute('src');
+            videoEl.load();
+          } else if (currentType === 'image') {
+            // 이미지도 src만 제거 (URL 해제는 목록 교체/종료 시 일괄 수행)
+            imgEl.removeAttribute('src');
+          }
+        } catch {}
+      }
+
+      function resizeMedia() {
+        // 브라우저가 object-fit: contain 으로 처리하므로 별도 크기 계산 불필요
+        // 이 함수는 placeholder (Tk 버전과의 구조 대응)
+      }
+
+      let currentLoadToken = 0;
+      function showLoading() { loadingOverlay.classList.remove('hidden'); }
+      function hideLoading() { loadingOverlay.classList.add('hidden'); }
+
+      function preloadNext(index) {
+        if (!mediaList.length) return;
+        const next = mediaList[(index + 1) % mediaList.length];
+        if (!next) return;
+        if (next.type === 'image') {
+          const preImg = new Image();
+          preImg.decoding = 'async';
+          preImg.loading = 'eager';
+          preImg.src = getUrlForFile(next.file);
+        } else if (next.type === 'video') {
+          const preVideo = document.createElement('video');
+          preVideo.preload = 'metadata';
+          preVideo.src = getUrlForFile(next.file);
+        }
+      }
+
+      function showCurrent() {
+        if (!mediaList.length) return;
+        stopCurrentMedia();
+        const item = mediaList[currentIndex];
+        currentType = item.type;
+        const myToken = ++currentLoadToken;
+
+        imgEl.classList.remove('active');
+        videoEl.classList.remove('active');
+
+        showLoading();
+        if (item.type === 'image') {
+          const url = getUrlForFile(item.file);
+          const loader = new Image();
+          loader.decoding = 'async';
+          loader.onload = () => {
+            if (currentLoadToken !== myToken) return; // 취소됨
+            imgEl.src = url;
+            imgEl.alt = item.name;
+            imgEl.classList.add('active');
+            hideLoading();
+          };
+          loader.onerror = () => { if (currentLoadToken === myToken) hideLoading(); };
+          loader.src = url;
+        } else if (item.type === 'video') {
+          const url = getUrlForFile(item.file);
+          const onReady = () => {
+            if (currentLoadToken !== myToken) return;
+            videoEl.classList.add('active');
+            hideLoading();
+            videoEl.play().catch(() => {});
+            videoEl.removeEventListener('loadeddata', onReady);
+            videoEl.removeEventListener('canplay', onReady);
+          };
+          videoEl.src = url;
+          videoEl.loop = true;
+          videoEl.addEventListener('loadeddata', onReady);
+          videoEl.addEventListener('canplay', onReady);
+        }
+        resizeMedia();
+        // 다음 항목 프리로드
+        preloadNext(currentIndex);
+      }
+
+      function showNext() {
+        if (!mediaList.length) return;
+        stopCurrentMedia();
+        currentIndex = (currentIndex + 1) % mediaList.length;
+        showCurrent();
+        if (isPlaying) restartCountdown();
+      }
+      function showPrev() {
+        if (!mediaList.length) return;
+        stopCurrentMedia();
+        currentIndex = (currentIndex - 1 + mediaList.length) % mediaList.length;
+        showCurrent();
+        if (isPlaying) restartCountdown();
+      }
+
+      function startSlideshow() {
+        if (!mediaList.length) { alert('먼저 이미지 폴더를 선택해주세요.'); return; }
+        isPlaying = true;
+        btnPlay.innerHTML = '<svg viewBox="0 0 24 24" style="width: 24px; height: 24px;"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+        restartCountdown();
+        if (document.fullscreenElement) maybeShowOverlay();
+      }
+      function stopSlideshow() {
+        isPlaying = false;
+        btnPlay.innerHTML = '<svg viewBox="0 0 24 24" style="width: 24px; height: 24px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+        if (countdownTimerId) { clearTimeout(countdownTimerId); countdownTimerId = null; }
+        nextUpdateTime = null;
+        hideOverlay();
+        updateTimeButton();
+      }
+      function toggleSlideshow() { isPlaying ? stopSlideshow() : startSlideshow(); }
+
+      function updateCountdownTick() {
+        if (!isPlaying) return;
+        const now = performance.now();
+        if (nextUpdateTime == null) nextUpdateTime = now + 1000;
+        let wait = Math.max(0, nextUpdateTime - now);
+
+        if (countdown > 0) {
+          if (!document.fullscreenElement) {
+            if(btnTime.querySelector('span')) btnTime.querySelector('span').textContent = `${countdown}초`;
+          } else {
+            overlayEl.textContent = String(countdown);
+            maybeShowOverlay();
+          }
+          countdown -= 1;
+          nextUpdateTime += 1000;
+          countdownTimerId = setTimeout(updateCountdownTick, wait);
+        } else {
+          nextUpdateTime = now + 1000;
+          showNext();
+          countdown = slideIntervalSec;
+          countdownTimerId = setTimeout(updateCountdownTick, wait);
+        }
+      }
+      function restartCountdown() {
+        countdown = slideIntervalSec;
+        nextUpdateTime = null;
+        if (countdownTimerId) clearTimeout(countdownTimerId);
+        updateCountdownTick();
+      }
+
+      function maybeShowOverlay() {
+        if (document.fullscreenElement && isPlaying && currentType === 'image') {
+          overlayEl.style.display = 'block';
+        } else {
+          overlayEl.style.display = 'none';
+        }
+      }
+      function hideOverlay() { overlayEl.style.display = 'none'; }
+
+      async function enterFullscreen() {
+        if (!document.fullscreenElement) {
+          await stage.requestFullscreen().catch(() => {});
+        }
+        bottomBar.style.display = 'none';
+        fullscreenExit.style.display = 'grid';
+        maybeShowOverlay();
+      }
+      async function exitFullscreen() {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen().catch(() => {});
+        }
+        bottomBar.style.display = '';
+        fullscreenExit.style.display = 'none';
+        hideOverlay();
+      }
+      function toggleFullscreen() { document.fullscreenElement ? exitFullscreen() : enterFullscreen(); }
+
+      // 폴더 선택 (우선 File System Access API, 폴백으로 webkitdirectory)
+      async function selectFolder(initialFromLast=false) {
+        if (initialFromLast) {
+          // 저장된 핸들이 있으면 자동으로 불러오기 시도
+          const handle = await loadLastFolderHandle();
+          if (handle) {
+            try {
+              // 읽기 권한만 확인/요청 (팝업은 브라우저 정책에 따르지만, 성공 시 바로 로드)
+              const ok = await verifyPermission(handle, false);
+              if (ok) {
+                lastSourceType = 'fs';
+                await loadFromDirectoryHandle(handle);
+                return;
+              }
+            } catch {}
+          }
+          // 저장된 핸들이 없거나 권한 실패 → 업로드 대화상자로 폴백
+        }
+        // 일반 선택: 업로드(webkitdirectory)만 열기
+        lastSourceType = 'upload';
+        dirInput.click();
+      }
+
+      async function verifyPermission(fileHandle, readWrite) {
+        const options = {};
+        if (readWrite) options.mode = 'readwrite';
+        if ((await fileHandle.queryPermission(options)) === 'granted') {
+          return true;
+        }
+        return (await fileHandle.requestPermission(options)) === 'granted';
+      }
+
+      async function loadFromDirectoryHandle(dirHandle) {
+        const items = [];
+        async function walk(handle, path='') {
+          for await (const [name, child] of handle.entries()) {
+            if (child.kind === 'file') {
+              const ext = toExt(name);
+              if (!validExt.includes(ext)) continue;
+              const file = await child.getFile();
+              items.push({
+                type: imageExt.includes(ext) ? 'image' : 'video',
+                name: name,
+                file: file,
+                lastModified: file.lastModified
+              });
+            } else if (child.kind === 'directory') {
+              await walk(child, path + name + '/');
+            }
+          }
+        }
+        await walk(dirHandle);
+
+        applyMediaList(items);
+      }
+
+      function applyMediaList(items) {
+        // 전체 교체 모드: 캐시/목록 초기화 후 즉시 첫 배치 반영
+        try {
+          for (const [, url] of urlCache) revokeUrlSafe(url);
+          urlCache.clear();
+        } catch {}
+        mediaList = [];
+        if (!items || !items.length) {
+          alert('선택한 폴더에 이미지 또는 지원되는 미디어 파일이 없습니다.');
+          return;
+        }
+        applyMediaAppend(items, true);
+        finalizeSortPreserveCurrent();
+      }
+
+      dirInput.addEventListener('change', async (e) => {
+        const files = Array.from(dirInput.files || []);
+        if (!files.length) return;
+        // 초기화
+        try { for (const [, url] of urlCache) revokeUrlSafe(url); urlCache.clear(); } catch {}
+        mediaList = [];
+        currentIndex = 0;
+        isBatchLoading = true;
+        const myVersion = ++batchLoadVersion;
+
+        const validFiles = files.filter(f => validExt.includes(toExt(f.name)));
+        const batchSize = 15;
+        let offset = 0;
+
+        const pump = () => {
+          if (batchLoadVersion !== myVersion) return; // 중단
+          if (offset >= validFiles.length) {
+            isBatchLoading = false;
+            finalizeSortPreserveCurrent();
+            return;
+          }
+
+          const slice = validFiles.slice(offset, offset + batchSize);
+          offset += batchSize;
+          const items = slice.map(f => ({
+            type: imageExt.includes(toExt(f.name)) ? 'image' : 'video',
+            name: f.webkitRelativePath || f.name,
+            file: f,
+            lastModified: f.lastModified
+          }));
+          applyMediaAppend(items, offset <= batchSize);
+          scheduleIdle(pump);
+        };
+
+        pump();
+      });
+
+      // 이벤트 바인딩
+      btnSelect.addEventListener('click', () => selectFolder(false));
+      btnLast.addEventListener('click', () => selectFolder(true));
+      btnPrev.addEventListener('click', showPrev);
+      btnNext.addEventListener('click', showNext);
+      btnPlay.addEventListener('click', toggleSlideshow);
+      btnFullscreen.addEventListener('click', toggleFullscreen);
+      fullscreenExit.addEventListener('click', exitFullscreen);
+
+      btnRandom.addEventListener('click', () => {
+        isRandom = !isRandom;
+        updateRandomButton();
+        persistState();
+        if (mediaList.length) {
+          sortMedia();
+          currentIndex = 0;
+          showCurrent();
+        }
+      });
+
+      btnTime.addEventListener('click', () => {
+        if (isPlaying) return;
+        currentTimeIndex = (currentTimeIndex + 1) % timeOptions.length;
+        slideIntervalSec = timeOptions[currentTimeIndex];
+        updateTimeButton();
+        persistState();
+      });
+      btnTime.addEventListener('contextmenu', (ev) => {
+        ev.preventDefault();
+        if (isPlaying) return false;
+        currentTimeIndex = Math.max(0, currentTimeIndex - 1);
+        slideIntervalSec = timeOptions[currentTimeIndex];
+        updateTimeButton();
+        persistState();
+        return false;
+      });
+
+      // 키보드 단축키
+      window.addEventListener('keydown', (e) => {
+        const k = e.key;
+        if (k === ' ') { e.preventDefault(); toggleSlideshow(); }
+        else if (k === 'ArrowRight') { showNext(); }
+        else if (k === 'ArrowLeft') { showPrev(); }
+        else if (k === 'f' || k === 'F') { toggleFullscreen(); }
+        else if (k === 'Escape') { exitFullscreen(); }
+        else if (k === 'r' || k === 'R') { selectFolder(true); }
+        else if (k === '.') { if (!isPlaying) { currentTimeIndex = Math.min(timeOptions.length - 1, currentTimeIndex + 1); slideIntervalSec = timeOptions[currentTimeIndex]; updateTimeButton(); persistState(); } }
+        else if (k === ',') { if (!isPlaying) { currentTimeIndex = Math.max(0, currentTimeIndex - 1); slideIntervalSec = timeOptions[currentTimeIndex]; updateTimeButton(); persistState(); } }
+      });
+
+      // 클릭 네비게이션 (이미지 중앙 클릭 시 슬라이드쇼 토글)
+      clickCatcher.addEventListener('click', (e) => {
+        if (!mediaList.length) { alert('먼저 이미지 폴더를 선택해주세요.'); return; }
+        const rect = stage.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        if (x < rect.width / 3) showPrev();
+        else if (x > (rect.width * 2) / 3) showNext();
+        else {
+          if (currentType === 'image') toggleSlideshow();
+        }
+      });
+
+      // 전체화면 변화 감지하여 UI 업데이트
+      document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+          bottomBar.style.display = 'none';
+          fullscreenExit.style.display = 'grid';
+        } else {
+          bottomBar.style.display = '';
+          fullscreenExit.style.display = 'none';
+          hideOverlay();
+          // 버튼에 시간 표시 복원
+          if (!isPlaying) updateTimeButton();
+        }
+        maybeShowOverlay();
+      });
+
+      // 창 리사이즈 대응 (Tk와 유사 구조 유지)
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resizeMedia, 300);
+      });
+
+      // 초기 버튼 상태 반영
+      updateRandomButton();
+      updateTimeButton();
+
+      // 창 종료 시 보유 중인 blob URL 일괄 해제
+      window.addEventListener('beforeunload', () => {
+        try { for (const [, url] of urlCache) revokeUrlSafe(url); } catch {}
+      });
+    })();
+
+    // Service Worker 등록
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js', { scope: '.' });
+      });
+    }
+  </script>
+</body>
+</html>
+
+
