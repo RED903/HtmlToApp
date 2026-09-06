@@ -65,27 +65,30 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(
       (async () => {
-        // 1. 요청 URL과 직접 일치하는 캐시 확인
-        const matchDirect = await caches.match(event.request, { ignoreSearch: true });
-        if (matchDirect) return matchDirect;
-
-        // 2. index.html 캐시 확인 (경로 차이 대비)
-        const matchIndex = await caches.match('./index.html') || await caches.match('index.html') || await caches.match('./');
-        if (matchIndex) return matchIndex;
-
-        // 3. 캐시에 없으면 네트워크 시도
         try {
+          // 1. 항상 네트워크 최신 버전을 먼저 가져오기 시도 (Network-First)
           const networkRes = await fetch(event.request);
           if (networkRes && networkRes.ok) {
             const copy = networkRes.clone();
             const cache = await caches.open(CACHE_NAME);
             cache.put(event.request, copy);
+            return networkRes;
           }
-          return networkRes;
         } catch (err) {
-          // 오프라인 상태일 때 최종 안전 fallback
-          return (await caches.match('./index.html')) || (await caches.match('index.html'));
+          console.warn('[SW v6] 네트워크 에러, 오프라인 모드로 진입', err);
         }
+
+        // 2. 오프라인이거나 네트워크 실패 시 캐시에서 파일 찾기
+        const matchDirect = await caches.match(event.request, { ignoreSearch: true });
+        if (matchDirect) return matchDirect;
+
+        const matchIndex = await caches.match('./index.html', { ignoreSearch: true }) || 
+                           await caches.match('index.html', { ignoreSearch: true }) || 
+                           await caches.match('./', { ignoreSearch: true });
+        if (matchIndex) return matchIndex;
+
+        // 최종 실패 시 (캐시도 없고 네트워크도 안됨)
+        return new Response('오프라인 상태이거나 파일을 찾을 수 없습니다.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
       })()
     );
     return;
