@@ -1,0 +1,26 @@
+{
+  "name": "슬라이드 쇼",
+  "short_name": "슬라이드",
+  "description": "랜덤 이미지 및 비디오 슬라이드쇼 앱",
+  "id": "slideshow-pwa-v1",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%233b82f6%22 rx=%2220%22/><circle cx=%2250%22 cy=%2250%22 r=%2230%22 fill=%22white%22/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%233b82f6%22 rx=%2220%22/><circle cx=%2250%22 cy=%2250%22 r=%2230%22 fill=%22white%22/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
