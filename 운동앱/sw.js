@@ -1,5 +1,5 @@
-// 운동앱 전용 서비스 워커 (Service Worker v5)
-const CACHE_NAME = 'workout-timer-v5';
+// 운동앱 전용 서비스 워커 (Service Worker v7)
+const CACHE_NAME = 'workout-timer-v7';
 
 // 오프라인 구동을 위해 반드시 저장할 파일 목록
 const PRECACHE_ASSETS = [
@@ -94,22 +94,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // B. 스크립트, 스타일, 아이콘, 폰트 요청 (Cache-First)
+  // B. 스크립트, 스타일, 아이콘, 폰트 요청 (Network-First & Fallback Cache)
   event.respondWith(
-    caches.match(event.request, { ignoreSearch: true }).then((cached) => {
-      if (cached) {
-        return cached;
-      }
-      return fetch(event.request).then((networkRes) => {
+    (async () => {
+      try {
+        // 네트워크 최신 자원 우선 가져오기
+        const networkRes = await fetch(event.request);
         if (networkRes && (networkRes.status === 200 || networkRes.type === 'opaque')) {
           const copy = networkRes.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, copy);
-          });
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(event.request, copy);
         }
         return networkRes;
-      });
-    })
+      } catch (error) {
+        // 네트워크 실패(오프라인 등) 시 캐시 반환
+        const cached = await caches.match(event.request, { ignoreSearch: true });
+        if (cached) {
+          return cached;
+        }
+        throw error;
+      }
+    })()
   );
 });
 
