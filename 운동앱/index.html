@@ -413,6 +413,7 @@
           : '휴식이 완료되었습니다. 운동을 시작하세요!';
           
         triggerSystemNotification('🔔 휴식 시간 종료!', msg);
+        playBackupBeep(); // 안드로이드 시스템 알림음이 씹힐 경우를 대비한 백업 미디어 사운드
 
         if (alarmTimerRef.current) clearInterval(alarmTimerRef.current);
         let count = 0;
@@ -423,6 +424,7 @@
             return;
           }
           triggerSystemNotification('🔔 휴식 시간 종료!', msg);
+          playBackupBeep();
         }, 2500); // 2.5초 간격으로 시스템 알림 및 진동 반복 갱신
       }, [stepIndex, steps, triggerSystemNotification]);
 
@@ -542,11 +544,32 @@
         return `${m}:${s}`;
       };
 
+      // 시스템 알람음이 안 울릴 때를 대비한 미디어 백업 사운드 (UI 제거, 기본 내장)
+      const playBackupBeep = useCallback(() => {
+        try {
+          if (!audioCtxRef.current) {
+            audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          const ctx = audioCtxRef.current;
+          if (ctx.state === 'suspended') ctx.resume();
+          
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(2800, ctx.currentTime);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.2);
+        } catch(e) {}
+      }, []);
+
       // --- 설정 모달 열기 & 저장 로직 ---
       const openSettings = () => {
         setTempRoutine(JSON.parse(JSON.stringify(routine)));
         setTempRestTime(restTime);
-        setTempSoundType(soundType);
         setIsSettingOpen(true);
       };
 
@@ -561,12 +584,10 @@
 
         setRoutine(validRoutine);
         setRestTime(validTime);
-        setSoundType(tempSoundType);
 
         try {
           localStorage.setItem(STORAGE_KEY_ROUTINE, JSON.stringify(validRoutine));
           localStorage.setItem(STORAGE_KEY_REST_TIME, validTime.toString());
-          localStorage.setItem(STORAGE_KEY_SOUND_TYPE, tempSoundType);
         } catch (e) {
           console.error('설정 저장 실패:', e);
         }
@@ -576,10 +597,9 @@
       };
 
       const resetToDefault = () => {
-        if (window.confirm('기본 운동 루틴, 휴식 시간(120초), 알람음으로 초기화하시겠습니까?')) {
+        if (window.confirm('기본 운동 루틴과 휴식 시간(120초)으로 초기화하시겠습니까?')) {
           setTempRoutine(JSON.parse(JSON.stringify(DEFAULT_ROUTINE)));
           setTempRestTime(DEFAULT_REST_TIME);
-          setTempSoundType('digital_timer');
         }
       };
 
