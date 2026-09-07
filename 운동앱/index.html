@@ -109,7 +109,8 @@
     const SOUND_OPTIONS = [
       { id: 'digital_timer', name: '디지털 타이머 비프 (권장)', desc: '또렷한 4연속 고주파 비프 경보음' },
       { id: 'crystal_bell', name: '크리스탈 차임벨', desc: '맑고 청아한 화음 벨소리' },
-      { id: 'power_buzzer', name: '파워 스포츠 버저', desc: '체육관 스타일의 강력한 카운트 버저' }
+      { id: 'power_buzzer', name: '파워 스포츠 버저', desc: '체육관 스타일의 강력한 카운트 버저' },
+      { id: 'move_now', name: '당장 움직여 (음성)', desc: '호랑이 관장님의 불호령 알림음' }
     ];
 
     const STORAGE_KEY_ROUTINE = 'workout_routine_custom_v2';
@@ -492,6 +493,14 @@
           osc2.start(now);
           osc1.stop(now + 0.6);
           osc2.stop(now + 0.6);
+        }
+        // 4. mp3 음성 파일 재생
+        else if (typeToPlay === 'move_now') {
+          if (!window._moveNowAudio) {
+            window._moveNowAudio = new Audio('당장_움직여.mp3');
+          }
+          window._moveNowAudio.currentTime = 0;
+          window._moveNowAudio.play().catch(e => console.warn('오디오 재생 실패:', e));
         }
 
         // 모바일 기기 진동
