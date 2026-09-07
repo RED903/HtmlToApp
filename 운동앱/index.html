@@ -413,7 +413,8 @@
           : '휴식이 완료되었습니다. 운동을 시작하세요!';
           
         triggerSystemNotification('🔔 휴식 시간 종료!', msg);
-        playBackupBeep(); // 안드로이드 시스템 알림음이 씹힐 경우를 대비한 백업 미디어 사운드
+        // 미디어 알림 제거: 시스템 알림 채널만 사용
+        // playBackupBeep(); 
 
         if (alarmTimerRef.current) clearInterval(alarmTimerRef.current);
         let count = 0;
@@ -424,7 +425,7 @@
             return;
           }
           triggerSystemNotification('🔔 휴식 시간 종료!', msg);
-          playBackupBeep();
+          // playBackupBeep();
         }, 2500); // 2.5초 간격으로 시스템 알림 및 진동 반복 갱신
       }, [stepIndex, steps, triggerSystemNotification]);
 
